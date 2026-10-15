@@ -1,0 +1,17 @@
+plugins {
+    id 'io.nextflow.nextflow-plugin' version '1.0.0-beta.15'
+}
+
+version = '0.1.0'
+
+nextflowPlugin {
+    nextflowVersion = '26.04.6'
+
+    provider = 'Seqera Labs'
+    description = 'Verify pipeline outputs against a committed snapshot'
+    className = 'nextflow.snapshot.SnapshotPlugin'
+    extensionPoints = [
+        'nextflow.snapshot.SnapshotConfig',
+        'nextflow.snapshot.SnapshotFactory'
+    ]
+}

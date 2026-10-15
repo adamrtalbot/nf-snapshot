@@ -1,0 +1,10 @@
+{
+    "files": {
+        "gz/alice.txt.gz": "0f1d6bcf55c34bed7f92a805d2d89bbf",
+        "gz/bob.txt.gz": "504938460ef369cd275e4ef58994cffe",
+        "report/all.txt": "47a0e993fe1b91edf9db845a6c85b532",
+        "report/timestamp.log": null,
+        "say/alice.txt": "0f1d6bcf55c34bed7f92a805d2d89bbf",
+        "say/bob.txt": "504938460ef369cd275e4ef58994cffe"
+    }
+}
