@@ -2,6 +2,8 @@
 
 nf-snapshot checks the files a Nextflow run publishes against a snapshot file committed to the pipeline repository, the way nf-test snapshots work, but for one full-size run. If the outputs differ, the run exits with status 1.
 
+Documentation: **[Development guide](https://adamrtalbot.github.io/nf-snapshot/dev/)** · **[Versioned documentation](https://adamrtalbot.github.io/nf-snapshot/)**
+
 ## Usage
 
 Declare the plugin at the top level of `nextflow.config`, then enable it in a profile for each test that has a snapshot. Nextflow 26.10.0 did not load the plugin when it was declared inside a profile. The plugin does nothing unless `snapshot.enabled` is set.

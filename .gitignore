@@ -7,3 +7,9 @@
 build
 work
 validation/results
+
+# Documentation dependencies and generated output
+docs/node_modules/
+docs/.astro/
+docs/dist/
+docs/.site/

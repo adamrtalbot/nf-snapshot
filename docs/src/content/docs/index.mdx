@@ -14,7 +14,7 @@ hero:
       variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid } from "@astrojs/starlight/components";
 
 nf-snapshot checks the files a Nextflow run publishes against a JSON snapshot committed to your pipeline repository. If a file is missing, changed, or unexpected, the run exits with status `1`.
 
@@ -57,16 +57,24 @@ Only files published by the current run are captured, through `publishDir` or wo
 
 <CardGrid>
   <Card title="Keep useful checks" icon="approve-check">
-    Ignore files you do not want to track, or check unstable reports by filename. <a href={`${import.meta.env.BASE_URL}usage/`}>Read the usage guide</a>.
+    Ignore files you do not want to track, or check unstable reports by
+    filename.{" "}
+    <a href={`${import.meta.env.BASE_URL}usage/`}>Read the usage guide</a>.
   </Card>
   <Card title="Try a complete example" icon="document">
-    Follow a small pipeline with text files, gzip outputs, and a report directory. <a href={`${import.meta.env.BASE_URL}examples/`}>Explore the example</a>.
+    Follow a small pipeline with text files, gzip outputs, and a report
+    directory.{" "}
+    <a href={`${import.meta.env.BASE_URL}examples/`}>Explore the example</a>.
   </Card>
   <Card title="Find an option" icon="setting">
-    Look up defaults, path handling, glob patterns, and the JSON format. <a href={`${import.meta.env.BASE_URL}reference/`}>Open the reference</a>.
+    Look up defaults, path handling, glob patterns, and the JSON format.{" "}
+    <a href={`${import.meta.env.BASE_URL}reference/`}>Open the reference</a>.
   </Card>
   <Card title="Understand a failure" icon="warning">
-    Diagnose mismatches, empty captures, and resumed runs. <a href={`${import.meta.env.BASE_URL}troubleshooting/`}>Troubleshoot a run</a>.
+    Diagnose mismatches, empty captures, and resumed runs.{" "}
+    <a href={`${import.meta.env.BASE_URL}troubleshooting/`}>
+      Troubleshoot a run.
+    </a>
   </Card>
 </CardGrid>
 

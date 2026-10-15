@@ -20,7 +20,7 @@ You can also set `snapshot.update = true` in configuration. Keep that setting ou
 
 Ignore files that should not be part of the check:
 
-```groovy title="nextflow.config"
+```groovy title="nextflow.config" focus={6}
 profiles {
     test_full {
         snapshot {

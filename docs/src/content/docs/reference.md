@@ -7,14 +7,14 @@ description: Snapshot configuration, path resolution, glob matching, and the JSO
 
 Declare `plugins { id 'nf-snapshot@0.1.0' }` at the top level of `nextflow.config`. Configure these six options inside `snapshot { ... }`, usually within a test profile.
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `enabled` | `false` | Enable the check. Loading the plugin alone does nothing. |
-| `file` | None | Required when enabled. Path to the snapshot JSON file. |
-| `baseDir` | `params.outdir`, otherwise `outputDir` | Output root used to form relative snapshot paths. |
-| `update` | `false` | Replace the baseline instead of checking it. Also enabled by `NXF_SNAPSHOT_UPDATE=true`. |
-| `ignore` | `[]` | List of relative-path glob patterns to exclude. |
-| `nameOnly` | `[]` | List of relative-path glob patterns to compare by filename only. |
+| Option     | Default                                | Meaning                                                                                  |
+| ---------- | -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `enabled`  | `false`                                | Enable the check. Loading the plugin alone does nothing.                                 |
+| `file`     | None                                   | Required when enabled. Path to the snapshot JSON file.                                   |
+| `baseDir`  | `params.outdir`, otherwise `outputDir` | Output root used to form relative snapshot paths.                                        |
+| `update`   | `false`                                | Replace the baseline instead of checking it. Also enabled by `NXF_SNAPSHOT_UPDATE=true`. |
+| `ignore`   | `[]`                                   | List of relative-path glob patterns to exclude.                                          |
+| `nameOnly` | `[]`                                   | List of relative-path glob patterns to compare by filename only.                         |
 
 ### Paths
 
@@ -26,7 +26,7 @@ The output root is selected in this order:
 2. A non-empty `params.outdir`.
 3. Nextflow's `outputDir`.
 
-The selected root is resolved using Nextflow's canonical path handling. Relative local output roots use the run's working directory. Every published target must be under this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
+The selected root is resolved using Nextflow's canonical path handling. Every published target must be under this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
 
 ### Update mode
 
@@ -38,13 +38,13 @@ If the snapshot is missing, the plugin writes it regardless of update mode. A fa
 
 Patterns use Java `PathMatcher` glob syntax against each file's relative path. They are not regular expressions. On Unix-like systems, examples include:
 
-| Pattern | Matches |
-| --- | --- |
-| `report.html` | That file at the output root. |
-| `*.html` | HTML files at the output root. |
-| `**/*.html` | Nested HTML files; not root-level `report.html`. |
-| `{*.html,**/*.html}` | Both root-level and nested HTML files. |
-| `pipeline_info/**` | Files below `pipeline_info`. |
+| Pattern              | Matches                                          |
+| -------------------- | ------------------------------------------------ |
+| `report.html`        | That file at the output root.                    |
+| `*.html`             | HTML files at the output root.                   |
+| `**/*.html`          | Nested HTML files; not root-level `report.html`. |
+| `{*.html,**/*.html}` | Both root-level and nested HTML files.           |
+| `pipeline_info/**`   | Files below `pipeline_info`.                     |
 
 `ignore` is applied before `nameOnly`. If every captured file is ignored, the run fails with an empty-capture error. Output targets outside `baseDir` fail before ignore patterns are considered.
 
@@ -69,11 +69,11 @@ Published directories are expanded recursively into regular files, following sym
 
 Comparison reports:
 
-| Result | Meaning |
-| --- | --- |
-| `missing` | A baseline path was not captured in this run. |
-| `unexpected` | A captured path is absent from the baseline. |
-| `changed` | Both sides have a hash, and those hashes differ. |
+| Result       | Meaning                                          |
+| ------------ | ------------------------------------------------ |
+| `missing`    | A baseline path was not captured in this run.    |
+| `unexpected` | A captured path is absent from the baseline.     |
+| `changed`    | Both sides have a hash, and those hashes differ. |
 
 A `null` on either side suppresses content comparison for that path. To restore content checking after removing a `nameOnly` pattern, regenerate the baseline.
 
