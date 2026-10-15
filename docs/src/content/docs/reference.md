@@ -7,24 +7,20 @@ description: Snapshot configuration, path resolution, glob matching, and the JSO
 
 Declare `plugins { id 'nf-snapshot@0.1.0' }` at the top level of `nextflow.config`. Configure these six options inside `snapshot { ... }`, usually within a test profile.
 
-| Option     | Default                                | Meaning                                                                                  |
-| ---------- | -------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `enabled`  | `false`                                | Enable the check. Loading the plugin alone does nothing.                                 |
-| `file`     | None                                   | Required when enabled. Path to the snapshot JSON file.                                   |
-| `baseDir`  | `params.outdir`, otherwise `outputDir` | Output root used to form relative snapshot paths.                                        |
-| `update`   | `false`                                | Replace the baseline instead of checking it. Also enabled by `NXF_SNAPSHOT_UPDATE=true`. |
-| `ignore`   | `[]`                                   | List of relative-path glob patterns to exclude.                                          |
-| `nameOnly` | `[]`                                   | List of relative-path glob patterns to compare by filename only.                         |
+| Option     | Default     | Meaning                                                                                  |
+| ---------- | ----------- | ---------------------------------------------------------------------------------------- |
+| `enabled`  | `false`     | Enable the check. Loading the plugin alone does nothing.                                 |
+| `file`     | None        | Required when enabled. Path to the snapshot JSON file.                                   |
+| `baseDir`  | `outputDir` | Output root used to form relative snapshot paths.                                        |
+| `update`   | `false`     | Replace the baseline instead of checking it. Also enabled by `NXF_SNAPSHOT_UPDATE=true`. |
+| `ignore`   | `[]`        | List of relative-path glob patterns to exclude.                                          |
+| `nameOnly` | `[]`        | List of relative-path glob patterns to compare by filename only.                         |
 
 ### Paths
 
 A relative `snapshot.file` resolves against the pipeline project directory, not the shell's working directory. Absolute paths are used directly.
 
-The output root is selected in this order:
-
-1. A non-empty `snapshot.baseDir`.
-2. A non-empty `params.outdir`.
-3. Nextflow's `outputDir`.
+The output root is `snapshot.baseDir` when set, otherwise Nextflow's `outputDir` (set with `-output-dir`, default `results`).
 
 The selected root is resolved using Nextflow's canonical path handling. Every published target must be under this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
 
@@ -50,7 +46,7 @@ Patterns use Java `PathMatcher` glob syntax against each file's relative path. T
 
 ## Captured files
 
-The plugin records publication events from both process `publishDir` and workflow `output` blocks. It checks only what the current run publishes; unrelated files already in the output directory are not added.
+The plugin records publication events from both workflow `output` blocks and process `publishDir`. It checks only what the current run publishes; unrelated files already in the output directory are not added.
 
 Published directories are expanded recursively into regular files, following symbolic links. Files ending in `.gz` are decompressed before hashing so gzip header timestamps do not cause differences. Other files are hashed as stored. Remote files are downloaded to calculate their hashes.
 

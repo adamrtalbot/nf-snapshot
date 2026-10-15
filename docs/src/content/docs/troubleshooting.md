@@ -40,7 +40,7 @@ This is expected: a missing snapshot is created automatically. Commit the baseli
 nf-snapshot: 1 published file(s) outside snapshot base dir ...
 ```
 
-Set `snapshot.baseDir` to a common parent of all published targets. Its default is `params.outdir`, falling back to Nextflow's `outputDir`. Ignore patterns do not exempt targets from this check.
+Set `snapshot.baseDir` to a common parent of all published targets. Its default is Nextflow's `outputDir`. Ignore patterns do not exempt targets from this check.
 
 ## No published files were found
 

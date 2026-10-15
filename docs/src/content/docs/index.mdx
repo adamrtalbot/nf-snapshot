@@ -53,7 +53,7 @@ nf-snapshot: outputs differ from /path/to/tests/snapshots/test_full.json
   unexpected: salmon/sample3/quant.sf
 ```
 
-Only files published by the current run are captured, through `publishDir` or workflow outputs. Compressed `.gz` files are compared after decompression, and published directories are expanded into their files.
+Only files published by the current run are captured, through workflow outputs or `publishDir`. Compressed `.gz` files are compared after decompression, and published directories are expanded into their files.
 
 <CardGrid>
   <Card title="Keep useful checks" icon="approve-check">

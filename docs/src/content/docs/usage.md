@@ -58,17 +58,17 @@ A `null` hash in either the baseline or the current capture means name-only comp
 
 ## Choose the output root
 
-Usually `params.outdir` already identifies the published output directory. If your pipeline uses another parameter, set `baseDir` explicitly:
+Snapshot paths are relative to Nextflow's `outputDir`, which is where the workflow `output` block publishes. If your pipeline publishes elsewhere, for example with `publishDir` and `params.outdir`, set `baseDir` explicitly:
 
 ```groovy title="nextflow.config"
 snapshot {
     enabled = true
     file = 'tests/snapshots/test_full.json'
-    baseDir = params.results_dir
+    baseDir = params.outdir
 }
 ```
 
-All published targets must be under that directory, including targets matched by `ignore`. Files elsewhere cause a failure. See [path resolution](../reference/#paths) for the default precedence.
+All published targets must be under that directory, including targets matched by `ignore`. Files elsewhere cause a failure. See [path resolution](../reference/#paths) for details.
 
 ## Run in CI
 

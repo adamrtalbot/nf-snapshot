@@ -68,7 +68,7 @@ class SnapshotObserver implements TraceObserverV2 {
             return
         }
         final file = snapshotFile()
-        final base = FileHelper.toCanonicalPath(config.baseDir ?: session.params.outdir ?: session.outputDir)
+        final base = FileHelper.toCanonicalPath(config.baseDir ?: session.outputDir)
         // ponytail: hashes serially, parallelise if full-size runs are slow
         final actual = capture(published, base, config.ignore, config.nameOnly)
 

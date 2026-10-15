@@ -48,14 +48,14 @@ If the snapshot file does not exist yet, the plugin writes it and does not fail.
 
 ## Options
 
-| Option     | Default                           | Description                                                                           |
-| ---------- | --------------------------------- | ------------------------------------------------------------------------------------- |
-| `enabled`  | `false`                           | Enable the check.                                                                     |
-| `file`     |                                   | Snapshot JSON file. Relative paths resolve against the project directory.             |
-| `baseDir`  | `params.outdir`, else `outputDir` | Directory that snapshot paths are relative to.                                        |
-| `update`   | `false`                           | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same. |
-| `ignore`   | `[]`                              | Glob patterns of relative paths to leave out of the snapshot.                         |
-| `nameOnly` | `[]`                              | Glob patterns of relative paths that are checked by name only.                        |
+| Option     | Default     | Description                                                                           |
+| ---------- | ----------- | ------------------------------------------------------------------------------------- |
+| `enabled`  | `false`     | Enable the check.                                                                     |
+| `file`     |             | Snapshot JSON file. Relative paths resolve against the project directory.             |
+| `baseDir`  | `outputDir` | Directory that snapshot paths are relative to.                                        |
+| `update`   | `false`     | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same. |
+| `ignore`   | `[]`        | Glob patterns of relative paths to leave out of the snapshot.                         |
+| `nameOnly` | `[]`        | Glob patterns of relative paths that are checked by name only.                        |
 
 Globs use Java `PathMatcher` syntax, so `**/*.html` does not match `report.html` at the top level. Use `{*.html,**/*.html}` to match both.
 
@@ -74,7 +74,7 @@ Each entry holds the MD5 of the file content, or `null` for name-only files. The
 
 ## Notes
 
-- The plugin captures only the files the current run publishes, through `publishDir` or the workflow `output` block. It ignores other files in the output directory.
+- The plugin captures only the files the current run publishes, through the workflow `output` block or `publishDir`. It ignores other files in the output directory.
 - Every published file must be under `baseDir`. If one is not, or nothing was published, the run fails instead of passing against an empty snapshot.
 - With `-resume`, `publishDir` does not overwrite files that already exist for cached tasks. Use an empty output directory, or the check will compare files left over from earlier runs.
 - Outputs must be deterministic. For example, files built from `collect()` can change order between runs, so sort them first or mark them `nameOnly`.

@@ -1,9 +1,8 @@
-params.outdir = 'results'
-params.greeting = 'hello'
+params {
+    greeting: String = 'hello'
+}
 
 process SAY {
-    publishDir "${params.outdir}/say", mode: 'copy'
-
     input:
     val name
 
@@ -43,11 +42,15 @@ workflow {
     report = REPORT(txt.collect())
 
     publish:
+    say = txt
     gz = gz
     report = report
 }
 
 output {
+    say {
+        path 'say'
+    }
     gz {
         path 'gz'
         index {

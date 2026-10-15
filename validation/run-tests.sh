@@ -2,6 +2,7 @@
 # End-to-end tests: run the validation pipeline with the installed plugin and check exit code and output.
 # Usage: validation/run-tests.sh (after `make install`)
 set -uo pipefail
+export NXF_SYNTAX_PARSER=v2
 cd "$(dirname "$0")"
 
 VERSION=$(sed -n "s/^version = '\(.*\)'/\1/p" ../build.gradle)

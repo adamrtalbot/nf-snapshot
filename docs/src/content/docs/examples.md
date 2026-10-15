@@ -5,17 +5,16 @@ description: A complete pipeline using process publication, workflow outputs, gz
 
 ## A small full-run snapshot
 
-This example adapts the repository's validation pipeline. `SAY` publishes text files with `publishDir`. The workflow publishes compressed copies and a report directory through an `output` block. Both mechanisms feed the same snapshot.
+This example adapts the repository's validation pipeline. The workflow publishes the text files, their compressed copies and a report directory through an `output` block. It is valid under `NXF_SYNTAX_PARSER=v2`.
 
 Save this as `main.nf` in a new directory. It uses `gzip`, `cat`, and `date` from your local environment.
 
 ```groovy title="main.nf"
-params.outdir = 'results'
-params.greeting = 'hello'
+params {
+    greeting: String = 'hello'
+}
 
 process SAY {
-    publishDir "${params.outdir}/say", mode: 'copy'
-
     input:
     val name
 
@@ -60,11 +59,15 @@ workflow {
     report = REPORT(txt.collect().map { files -> files.sort { it.name } })
 
     publish:
+    say = txt
     gz = gz
     report = report
 }
 
 output {
+    say {
+        path 'say'
+    }
     gz {
         path 'gz'
         index {
