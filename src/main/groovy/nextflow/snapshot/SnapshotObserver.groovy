@@ -74,7 +74,7 @@ class SnapshotObserver implements TraceObserverV2 {
 
         if( config.update || !Files.exists(file) ) {
             Files.createDirectories(file.parent)
-            Files.writeString(file, JsonOutput.prettyPrint(JsonOutput.toJson([files: actual])) + '\n')
+            Files.writeString(file, toJson(actual))
             log.info "nf-snapshot: wrote ${actual.size()} files to ${file}"
             return
         }
@@ -144,6 +144,12 @@ class SnapshotObserver implements TraceObserverV2 {
                 result.add("  changed:    ${key}".toString())
         }
         return result
+    }
+
+    /** 2-space indent, matching Prettier, so formatting the file does not change it. */
+    static String toJson(Map<String,String> files) {
+        final entries = files.collect { k, v -> "    ${JsonOutput.toJson(k)}: ${JsonOutput.toJson(v)}".toString() }
+        return '{\n  "files": {\n' + entries.join(',\n') + '\n  }\n}\n'
     }
 
     private static List<PathMatcher> matchers(List<String> globs) {

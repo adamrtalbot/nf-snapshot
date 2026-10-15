@@ -23,3 +23,7 @@ install:
 # Publish the plugin
 release:
 	$(GRADLE) releasePlugin
+
+# Run end-to-end tests against the installed plugin
+e2e: install
+	validation/run-tests.sh

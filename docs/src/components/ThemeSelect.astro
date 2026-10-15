@@ -1,0 +1,49 @@
+---
+import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro';
+
+const version = process.env.DOCS_VERSION || 'dev';
+---
+
+<div class="docs-selectors">
+  <docs-version-select data-version={version}>
+    <select aria-label="Documentation version">
+      <option value={version}>{version === 'dev' ? 'Development' : version === 'latest' ? 'Latest' : `v${version}`}</option>
+    </select>
+  </docs-version-select>
+  <ThemeSelect><slot /></ThemeSelect>
+</div>
+
+<script>
+  class DocsVersionSelect extends HTMLElement {
+    async connectedCallback() {
+      const select = this.querySelector('select');
+      if (!select) return;
+      const root = '/nf-snapshot/';
+      select.addEventListener('change', () => {
+        window.location.href = `${root}${select.value}/`;
+      });
+      // A standalone local preview has no shared deployment manifest.
+      if (import.meta.env.DEV) return;
+      try {
+        const response = await fetch(`${root}versions.json`);
+        if (!response.ok) return;
+        const { latest, versions } = await response.json();
+        if (!Array.isArray(versions) || !versions.every((v) => typeof v === 'string' && /^\d+\.\d+\.\d+$/.test(v))) return;
+        const options = [
+          ...versions.map((v: string) => new Option(`v${v}${v === latest ? ' (latest)' : ''}`, v)),
+          new Option('Development', 'dev'),
+        ];
+        if (this.dataset.version === 'latest') {
+          options.unshift(new Option(`Latest${latest ? ` (v${latest})` : ''}`, 'latest'));
+        }
+        select.replaceChildren(...options);
+        select.value = this.dataset.version || 'dev';
+      } catch {
+        // Keep the current version visible when the manifest is unavailable.
+      }
+    }
+  }
+  if (!customElements.get('docs-version-select')) {
+    customElements.define('docs-version-select', DocsVersionSelect);
+  }
+</script>

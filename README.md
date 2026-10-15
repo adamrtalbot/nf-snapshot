@@ -46,14 +46,14 @@ If the snapshot file does not exist yet, the plugin writes it and does not fail.
 
 ## Options
 
-| Option | Default | Description |
-|---|---|---|
-| `enabled` | `false` | Enable the check. |
-| `file` | | Snapshot JSON file. Relative paths resolve against the project directory. |
-| `baseDir` | `params.outdir`, else `outputDir` | Directory that snapshot paths are relative to. |
-| `update` | `false` | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same. |
-| `ignore` | `[]` | Glob patterns of relative paths to leave out of the snapshot. |
-| `nameOnly` | `[]` | Glob patterns of relative paths that are checked by name only. |
+| Option     | Default                           | Description                                                                           |
+| ---------- | --------------------------------- | ------------------------------------------------------------------------------------- |
+| `enabled`  | `false`                           | Enable the check.                                                                     |
+| `file`     |                                   | Snapshot JSON file. Relative paths resolve against the project directory.             |
+| `baseDir`  | `params.outdir`, else `outputDir` | Directory that snapshot paths are relative to.                                        |
+| `update`   | `false`                           | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same. |
+| `ignore`   | `[]`                              | Glob patterns of relative paths to leave out of the snapshot.                         |
+| `nameOnly` | `[]`                              | Glob patterns of relative paths that are checked by name only.                        |
 
 Globs use Java `PathMatcher` syntax, so `**/*.html` does not match `report.html` at the top level. Use `{*.html,**/*.html}` to match both.
 
@@ -61,10 +61,10 @@ Globs use Java `PathMatcher` syntax, so `**/*.html` does not match `report.html`
 
 ```json
 {
-    "files": {
-        "multiqc/multiqc_report.html": null,
-        "salmon/sample1/quant.sf": "9e107d9d372bb6826bd81d3542a419d6"
-    }
+  "files": {
+    "multiqc/multiqc_report.html": null,
+    "salmon/sample1/quant.sf": "9e107d9d372bb6826bd81d3542a419d6"
+  }
 }
 ```
 
@@ -75,12 +75,17 @@ Each entry holds the MD5 of the file content, or `null` for name-only files. The
 - The plugin captures only the files the current run publishes, through `publishDir` or the workflow `output` block. It ignores other files in the output directory.
 - Every published file must be under `baseDir`. If one is not, or nothing was published, the run fails instead of passing against an empty snapshot.
 - With `-resume`, `publishDir` does not overwrite files that already exist for cached tasks. Use an empty output directory, or the check will compare files left over from earlier runs.
+- Outputs must be deterministic. For example, files built from `collect()` can change order between runs, so sort them first or mark them `nameOnly`.
+- The plugin writes JSON with 2-space indentation, so Prettier leaves the file unchanged.
 - The plugin downloads remote outputs (for example `s3://`) to hash them.
 - A failed check skips part of Nextflow's shutdown, and the run history records the run as successful. `-resume` still reuses cached tasks.
 
 ## Development
 
 ```bash
-./gradlew assemble test install
-cd validation && rm -rf results && nextflow run . -profile snap
+make test       # unit tests
+make e2e        # install the plugin and run validation/run-tests.sh
+pre-commit run --all-files
 ```
+
+CI runs lint, unit tests on Java 17 and 21, and the end-to-end tests on Nextflow 26.04 and the latest stable release. When CI passes on `main` and no tag exists for the version in `build.gradle`, the publish workflow releases the plugin to the Nextflow registry, then tags and creates a GitHub release using the matching `CHANGELOG.md` section. It needs the `NF_PLUGIN_PUBLISH_TOKEN` secret.

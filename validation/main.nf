@@ -33,7 +33,7 @@ process REPORT {
     path 'report'
 
     script:
-    "mkdir report && date > report/timestamp.log && cat ${files} > report/all.txt"
+    "mkdir report && date > report/timestamp.log && cat *.txt > report/all.txt"
 }
 
 workflow {

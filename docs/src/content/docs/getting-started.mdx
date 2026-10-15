@@ -1,0 +1,99 @@
+---
+title: Getting started
+description: Configure a test profile, create a baseline, and verify your pipeline outputs.
+---
+
+import { CodeWalkthrough } from 'starlight-codeblocks/components';
+
+Use a representative, deterministic pipeline run as your baseline. nf-snapshot checks published outputs after a successful run; it does not check intermediate work files.
+
+## Install the plugin
+
+The plugin is compiled against Nextflow `26.04.6` and requires Java 17 or later. Use a compatible Nextflow release.
+
+The examples use `nf-snapshot@0.1.0`. If that version has not been published to the Nextflow plugin registry, install it from this repository before running your pipeline:
+
+```bash
+make install
+```
+
+This builds the plugin and installs it into your local Nextflow plugins directory. Run this command from the nf-snapshot checkout, then return to your pipeline directory.
+
+## Configure a test profile
+
+Add the plugin to the **top level** of your pipeline's `nextflow.config`. Step through the example to enable a profile and choose how to handle unstable files. The final step is the complete configuration.
+
+<CodeWalkthrough>
+
+```groovy title="nextflow.config" step="Load the plugin"
+plugins { id 'nf-snapshot@0.1.0' }
+```
+
+```groovy title="nextflow.config" step="Enable a test profile"
+plugins { id 'nf-snapshot@0.1.0' }
+
+profiles {
+    test_full {
+        snapshot {
+            enabled = true
+            file = 'tests/snapshots/test_full.json'
+        }
+    }
+}
+```
+
+```groovy title="nextflow.config" step="Choose what to compare"
+plugins { id 'nf-snapshot@0.1.0' }
+
+profiles {
+    test_full {
+        snapshot {
+            enabled = true
+            file = 'tests/snapshots/test_full.json'
+            ignore = ['pipeline_info/**']
+            nameOnly = ['{*.html,**/*.html}', '{*.log,**/*.log}']
+        }
+    }
+}
+```
+
+</CodeWalkthrough>
+
+`ignore` leaves matching files out entirely. `nameOnly` checks that matching files exist without comparing their contents. These patterns match both root-level and nested HTML or log files.
+
+:::caution[Load outside profiles]
+Nextflow `26.10.0` did not load the plugin when its declaration was inside a profile. Keep `plugins` at the top level and put only the `snapshot` settings inside the profile. Loading the plugin does not enable the check by itself.
+:::
+
+## Create and commit a baseline
+
+From your pipeline directory, run:
+
+```bash
+NXF_SNAPSHOT_UPDATE=true nextflow run . -profile test_full
+git diff -- tests/snapshots/test_full.json
+git add tests/snapshots/test_full.json
+git commit -m "Add full-run output snapshot"
+```
+
+Inspect the generated JSON before committing it. New, untracked files do not appear in `git diff`; open the snapshot directly when creating it for the first time. The plugin creates parent directories as needed.
+
+:::note[First-run behaviour]
+A missing snapshot is created automatically, even without `NXF_SNAPSHOT_UPDATE`. It does not fail the run. Committing the baseline is what makes future verification meaningful.
+:::
+
+## Verify future runs
+
+```bash
+nextflow run . -profile test_full
+```
+
+Matching outputs produce a message such as:
+
+```text
+nf-snapshot: 4 files match /path/to/tests/snapshots/test_full.json
+```
+
+Different outputs produce a list of missing, changed, and unexpected paths and exit with status `1`. If the pipeline itself fails, nf-snapshot skips the check.
+
+For deliberate output changes, <a href={`${import.meta.env.BASE_URL}usage/#accept-an-intentional-change`}>update and review the baseline</a>. For a runnable pipeline, continue to <a href={`${import.meta.env.BASE_URL}examples/`}>Examples</a>.
