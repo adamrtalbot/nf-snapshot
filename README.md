@@ -91,3 +91,7 @@ pre-commit run --all-files
 ```
 
 CI runs lint, unit tests on Java 17 and 21, and the end-to-end tests on Nextflow 26.04 and the latest stable release. When CI passes on `main` and no tag exists for the version in `build.gradle`, the publish workflow releases the plugin to the Nextflow registry, then tags and creates a GitHub release using the matching `CHANGELOG.md` section. It needs the `NF_PLUGIN_PUBLISH_TOKEN` secret.
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
