@@ -7,7 +7,7 @@ version = '0.1.0'
 nextflowPlugin {
     nextflowVersion = '26.04.6'
 
-    provider = 'Seqera Labs'
+    provider = 'Seqeralabs'
     description = 'Verify pipeline outputs against a committed snapshot'
     className = 'nextflow.snapshot.SnapshotPlugin'
     extensionPoints = [
