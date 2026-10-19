@@ -70,7 +70,7 @@ class SnapshotObserver implements TraceObserverV2 {
         final file = snapshotFile()
         final base = FileHelper.toCanonicalPath(config.baseDir ?: session.outputDir)
         // ponytail: hashes serially, parallelise if full-size runs are slow
-        final actual = capture(published, base, config.ignore, config.nameOnly)
+        final actual = capture(published, base, config.ignore, config.nameOnly, config.sizeOnly)
 
         if( config.update || !Files.exists(file) ) {
             Files.createDirectories(file.parent)
@@ -97,23 +97,30 @@ class SnapshotObserver implements TraceObserverV2 {
     }
 
     /**
-     * Map each published file under {@code base} to its MD5, or null for name-only files.
-     * Published directories are expanded into their files.
+     * Map each published file under {@code base} to its MD5, {@code size:<bytes>} for size-only files,
+     * or null for name-only files. Published directories are expanded into their files.
      */
-    static Map<String,String> capture(Collection<Path> targets, Path base, List<String> ignore, List<String> nameOnly) {
+    static Map<String,String> capture(Collection<Path> targets, Path base, List<String> ignore, List<String> nameOnly, List<String> sizeOnly) {
         final outside = targets.findAll { Path it -> !it.startsWith(base) }
         if( outside )
             fail("nf-snapshot: ${outside.size()} published file(s) outside snapshot base dir ${base}, e.g. ${outside.take(3).join(', ')}. Set `snapshot.baseDir`")
 
         final ignoreMatchers = matchers(ignore)
         final nameOnlyMatchers = matchers(nameOnly)
+        final sizeOnlyMatchers = matchers(sizeOnly)
         final result = new TreeMap<String,String>()
         for( Path target : targets ) {
             Files.walk(target, FileVisitOption.FOLLOW_LINKS).withCloseable { stream ->
                 stream.filter { Path it -> Files.isRegularFile(it) }.forEach { Path it ->
                     final rel = base.relativize(it).toString()
-                    if( !matches(ignoreMatchers, rel) )
-                        result.put(rel, matches(nameOnlyMatchers, rel) ? null : hash(it))
+                    if( matches(ignoreMatchers, rel) )
+                        return
+                    if( matches(nameOnlyMatchers, rel) )
+                        result.put(rel, null)
+                    else if( matches(sizeOnlyMatchers, rel) )
+                        result.put(rel, "size:${Files.size(it)}".toString())
+                    else
+                        result.put(rel, hash(it))
                 }
             }
         }

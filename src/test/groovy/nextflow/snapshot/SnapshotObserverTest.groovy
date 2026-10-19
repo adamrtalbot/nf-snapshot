@@ -49,12 +49,22 @@ class SnapshotObserverTest extends Specification {
         def skip = tmp.resolve('out/skip.csv'); skip.text = 'w'
 
         when:
-        def result = SnapshotObserver.capture([dir, single, skip], tmp.resolve('out'), ['*.csv'], ['**/*.log'])
+        def result = SnapshotObserver.capture([dir, single, skip], tmp.resolve('out'), ['*.csv'], ['**/*.log'], [])
 
         then:
         result.keySet() as List == ['a.txt', 'report/all.txt', 'report/run.log']
         result['report/run.log'] == null
         result['a.txt'] == SnapshotObserver.hash(single)
+    }
+
+    def 'should record size for size-only files, with name-only taking precedence'() {
+        given:
+        def out = Files.createDirectories(tmp.resolve('out'))
+        def bam = out.resolve('a.bam'); bam.text = 'hello'
+        def log = out.resolve('a.log'); log.text = 'world'
+
+        expect:
+        SnapshotObserver.capture([bam, log], out, [], ['*.log'], ['*.bam', '*.log']) == ['a.bam': 'size:5', 'a.log': null]
     }
 
     def 'should follow symlinked directories'() {
@@ -64,7 +74,7 @@ class SnapshotObserverTest extends Specification {
         def link = Files.createSymbolicLink(Files.createDirectories(tmp.resolve('out')).resolve('report'), real)
 
         expect:
-        SnapshotObserver.capture([link], tmp.resolve('out'), [], []).keySet() as List == ['report/all.txt']
+        SnapshotObserver.capture([link], tmp.resolve('out'), [], [], []).keySet() as List == ['report/all.txt']
     }
 
     def 'should fail on files outside base or nothing captured'() {
@@ -72,13 +82,13 @@ class SnapshotObserverTest extends Specification {
         def file = tmp.resolve('a.txt'); file.text = 'z'
 
         when:
-        SnapshotObserver.capture([file], tmp.resolve('out'), [], [])
+        SnapshotObserver.capture([file], tmp.resolve('out'), [], [], [])
         then:
         def e = thrown(AbortRunException)
         e.message.contains('outside snapshot base dir')
 
         when:
-        SnapshotObserver.capture([], tmp, [], [])
+        SnapshotObserver.capture([], tmp, [], [], [])
         then:
         e = thrown(AbortRunException)
         e.message.contains('no published files')

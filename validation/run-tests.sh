@@ -56,6 +56,10 @@ export NXF_SNAPSHOT_UPDATE=true
 check "update env var rewrites"   0 "wrote 6 files"                 -profile snap -c "$(config "snapshot.file = '$TMP/new.json'")"
 unset NXF_SNAPSHOT_UPDATE
 check "env-rewritten snapshot"    0 "6 files match"                 -profile snap -c "$(config "snapshot.file = '$TMP/new.json'")"
+SIZE=$(config "snapshot { file = '$TMP/size.json'; ignore = ['gz/**']; sizeOnly = ['**/*.txt'] }")
+check "size-only writes size"     0 "wrote 4 files"                 -profile snap -c "$SIZE"
+check "size-only same size"       0 "4 files match"                 -profile snap -c "$SIZE" --greeting hallo
+check "size-only size changed"    1 "changed:    say/alice.txt"     -profile snap -c "$SIZE" --greeting hi
 
 echo
 if (( FAILED )); then

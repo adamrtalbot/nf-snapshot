@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Add `snapshot.sizeOnly` to check matching files by size instead of content, so large or remote files are not read.
+
 ## [0.1.0]
 
 - Verify published files against a committed JSON snapshot and fail the run on mismatch.

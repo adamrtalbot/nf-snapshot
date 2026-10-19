@@ -5,7 +5,7 @@ description: Snapshot configuration, path resolution, glob matching, and the JSO
 
 ## Configuration
 
-Declare `plugins { id 'nf-snapshot@0.1.0' }` at the top level of `nextflow.config`. Configure these six options inside `snapshot { ... }`, usually within a test profile.
+Declare `plugins { id 'nf-snapshot@0.1.0' }` at the top level of `nextflow.config`. Configure these seven options inside `snapshot { ... }`, usually within a test profile.
 
 | Option     | Default     | Meaning                                                                                  |
 | ---------- | ----------- | ---------------------------------------------------------------------------------------- |
@@ -15,6 +15,7 @@ Declare `plugins { id 'nf-snapshot@0.1.0' }` at the top level of `nextflow.confi
 | `update`   | `false`     | Replace the baseline instead of checking it. Also enabled by `NXF_SNAPSHOT_UPDATE=true`. |
 | `ignore`   | `[]`        | List of relative-path glob patterns to exclude.                                          |
 | `nameOnly` | `[]`        | List of relative-path glob patterns to compare by filename only.                         |
+| `sizeOnly` | `[]`        | List of relative-path glob patterns to compare by file size only.                        |
 
 ### Paths
 
@@ -42,13 +43,13 @@ Patterns use Java `PathMatcher` glob syntax against each file's relative path. T
 | `{*.html,**/*.html}` | Both root-level and nested HTML files.           |
 | `pipeline_info/**`   | Files below `pipeline_info`.                     |
 
-`ignore` is applied before `nameOnly`. If every captured file is ignored, the run fails with an empty-capture error. Output targets outside `baseDir` fail before ignore patterns are considered.
+`ignore` is applied first, then `nameOnly`, then `sizeOnly`. If every captured file is ignored, the run fails with an empty-capture error. Output targets outside `baseDir` fail before ignore patterns are considered.
 
 ## Captured files
 
 The plugin records publication events from both workflow `output` blocks and process `publishDir`. It checks only what the current run publishes; unrelated files already in the output directory are not added.
 
-Published directories are expanded recursively into regular files, following symbolic links. Files ending in `.gz` are decompressed before hashing so gzip header timestamps do not cause differences. Other files are hashed as stored. Remote files are downloaded to calculate their hashes.
+Published directories are expanded recursively into regular files, following symbolic links. Files ending in `.gz` are decompressed before hashing so gzip header timestamps do not cause differences. Other files are hashed as stored. Remote files are downloaded to calculate their hashes. Size-only files are not read; their size comes from file metadata, and for `.gz` files it is the compressed size.
 
 ## JSON format
 
@@ -56,12 +57,13 @@ Published directories are expanded recursively into regular files, following sym
 {
   "files": {
     "multiqc/multiqc_report.html": null,
-    "salmon/sample1/quant.sf": "9e107d9d372bb6826bd81d3542a419d6"
+    "salmon/sample1/quant.sf": "9e107d9d372bb6826bd81d3542a419d6",
+    "star/sample1.bam": "size:104857600"
   }
 }
 ```
 
-`files` maps relative filenames to lowercase MD5 hashes of their contents. Name-only entries contain `null`. Entries are written in sorted path order with two-space indentation, compatible with Prettier.
+`files` maps relative filenames to lowercase MD5 hashes of their contents. Size-only entries contain `size:<bytes>`. Name-only entries contain `null`. Entries are written in sorted path order with two-space indentation, compatible with Prettier.
 
 Comparison reports:
 
