@@ -49,6 +49,12 @@ class SnapshotConfig implements ConfigScope {
     """)
     final List<String> nameOnly
 
+    @ConfigOption
+    @Description("""
+        Glob patterns of relative paths that are checked by file size only, without reading the content.
+    """)
+    final List<String> sizeOnly
+
     /* required by extension point -- do not remove */
     SnapshotConfig() {}
 
@@ -59,5 +65,6 @@ class SnapshotConfig implements ConfigScope {
         this.update = opts.update as boolean || env.get('NXF_SNAPSHOT_UPDATE') == 'true'
         this.ignore = (opts.ignore ?: []) as List<String>
         this.nameOnly = (opts.nameOnly ?: []) as List<String>
+        this.sizeOnly = (opts.sizeOnly ?: []) as List<String>
     }
 }

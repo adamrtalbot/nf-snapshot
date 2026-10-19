@@ -17,11 +17,12 @@ class SnapshotConfigTest extends Specification {
         config.baseDir == null
         config.ignore == []
         config.nameOnly == []
+        config.sizeOnly == []
     }
 
     def 'should read options'() {
         when:
-        def config = new SnapshotConfig([enabled: true, file: 'a.json', baseDir: '/out', update: true, ignore: ['x'], nameOnly: ['y']], [:])
+        def config = new SnapshotConfig([enabled: true, file: 'a.json', baseDir: '/out', update: true, ignore: ['x'], nameOnly: ['y'], sizeOnly: ['z']], [:])
 
         then:
         config.enabled
@@ -30,6 +31,7 @@ class SnapshotConfigTest extends Specification {
         config.baseDir == '/out'
         config.ignore == ['x']
         config.nameOnly == ['y']
+        config.sizeOnly == ['z']
     }
 
     def 'should enable update from environment'() {

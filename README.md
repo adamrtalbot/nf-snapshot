@@ -56,6 +56,7 @@ If the snapshot file does not exist yet, the plugin writes it and does not fail.
 | `update`   | `false`     | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same. |
 | `ignore`   | `[]`        | Glob patterns of relative paths to leave out of the snapshot.                         |
 | `nameOnly` | `[]`        | Glob patterns of relative paths that are checked by name only.                        |
+| `sizeOnly` | `[]`        | Glob patterns of relative paths that are checked by file size, without reading them.  |
 
 Globs use Java `PathMatcher` syntax, so `**/*.html` does not match `report.html` at the top level. Use `{*.html,**/*.html}` to match both.
 
@@ -65,12 +66,13 @@ Globs use Java `PathMatcher` syntax, so `**/*.html` does not match `report.html`
 {
   "files": {
     "multiqc/multiqc_report.html": null,
-    "salmon/sample1/quant.sf": "9e107d9d372bb6826bd81d3542a419d6"
+    "salmon/sample1/quant.sf": "9e107d9d372bb6826bd81d3542a419d6",
+    "star/sample1.bam": "size:104857600"
   }
 }
 ```
 
-Each entry holds the MD5 of the file content, or `null` for name-only files. The plugin hashes `.gz` files after decompressing them, because the gzip header contains a timestamp. It expands published directories into the files they contain.
+Each entry holds the MD5 of the file content, `size:<bytes>` for size-only files, or `null` for name-only files. `nameOnly` takes precedence over `sizeOnly`. The plugin hashes `.gz` files after decompressing them, because the gzip header contains a timestamp. It expands published directories into the files they contain.
 
 ## Notes
 
@@ -79,7 +81,7 @@ Each entry holds the MD5 of the file content, or `null` for name-only files. The
 - With `-resume`, `publishDir` does not overwrite files that already exist for cached tasks. Use an empty output directory, or the check will compare files left over from earlier runs.
 - Outputs must be deterministic. For example, files built from `collect()` can change order between runs, so sort them first or mark them `nameOnly`.
 - The plugin writes JSON with 2-space indentation, so Prettier leaves the file unchanged.
-- The plugin downloads remote outputs (for example `s3://`) to hash them.
+- The plugin downloads remote outputs (for example `s3://`) to hash them. Mark large remote files `sizeOnly` to check their size from metadata instead.
 - A failed check skips part of Nextflow's shutdown, and the run history records the run as successful. `-resume` still reuses cached tasks.
 
 ## Development

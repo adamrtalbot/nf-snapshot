@@ -56,6 +56,18 @@ Prefer deterministic outputs where possible. For example, sort items collected f
 A `null` hash in either the baseline or the current capture means name-only comparison. Removing a pattern from `nameOnly` does not restore content checking for entries already stored as `null`: regenerate and commit the baseline to store their hashes.
 :::
 
+## Check large files by size
+
+Hashing reads every byte, and remote outputs such as `s3://` files are downloaded to the head node. For large files, compare only the size, which comes from file metadata:
+
+```groovy title="nextflow.config"
+snapshot {
+    sizeOnly = ['**/*.bam', '**/*.cram']
+}
+```
+
+A size check misses content changes that keep the same number of bytes. Changing a file between `sizeOnly` and a content hash reports it as `changed` until you regenerate the baseline.
+
 ## Choose the output root
 
 Snapshot paths are relative to Nextflow's `outputDir`, which is where the workflow `output` block publishes. If your pipeline publishes elsewhere, for example with `publishDir` and `params.outdir`, set `baseDir` explicitly:
