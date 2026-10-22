@@ -37,6 +37,19 @@ sed 's#say/bob.txt#say/carol.txt#' snapshot.json > "$TMP/renamed.json"
 echo '{' > "$TMP/broken.json"
 
 check "outputs match"             0 "6 files match"                 -profile snap
+# update command rewrites the snapshot from the outputs the previous check left in results/
+cp snapshot.json "$TMP/committed.json"
+echo '{}' > snapshot.json
+nextflow plugin nf-snapshot:update --profile snap > "$TMP/out.log" 2>&1
+got=$?
+if [[ $got == 0 ]] && grep -qF "wrote 6 files" "$TMP/out.log" && cmp -s snapshot.json "$TMP/committed.json"; then
+    echo "PASS  update command"
+else
+    echo "FAIL  update command: exit $got (want 0), snapshot.json differs or 'wrote 6 files' missing"
+    cat "$TMP/out.log"
+    FAILED=$((FAILED + 1))
+fi
+cp "$TMP/committed.json" snapshot.json
 check "content changed"           1 "changed:    say/alice.txt"     -profile snap --greeting hi
 check "file missing"              1 "missing:    say/carol.txt"     -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
 check "file unexpected"           1 "unexpected: say/bob.txt"       -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"

@@ -45,6 +45,14 @@ Patterns use Java `PathMatcher` glob syntax against each file's relative path. T
 
 `ignore` is applied first, then `nameOnly`, then `sizeOnly`. If every captured file is ignored, the run fails with an empty-capture error. Output targets outside `baseDir` fail before ignore patterns are considered.
 
+## Update command
+
+```bash
+nextflow plugin nf-snapshot:update [--profile <name>]
+```
+
+Writes the snapshot from every file under the output root, without running the pipeline. It builds the configuration from `nextflow.config` in the current directory plus the given profile, then resolves a relative `snapshot.file` and the output root against the current directory. It ignores `-c` files and `snapshot.enabled`, fails if `snapshot.file` is not set, and applies `ignore`, `nameOnly` and `sizeOnly` as a run does. The output root defaults to the `outputDir` config setting, or `results`.
+
 ## Captured files
 
 The plugin records publication events from both workflow `output` blocks and process `publishDir`. It checks only what the current run publishes; unrelated files already in the output directory are not added.
