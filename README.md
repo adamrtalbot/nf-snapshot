@@ -9,7 +9,7 @@ Documentation: **[Development guide](https://adamrtalbot.github.io/nf-snapshot/d
 Declare the plugin at the top level of `nextflow.config`, then enable it in a profile for each test that has a snapshot. Nextflow 26.10.0 did not load the plugin when it was declared inside a profile. The plugin does nothing unless `snapshot.enabled` is set.
 
 ```groovy
-plugins { id 'nf-snapshot@0.1.0' }
+plugins { id 'nf-snapshot@0.2.0' }
 
 profiles {
     test_full {

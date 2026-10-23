@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0]
+
 - Add `nextflow plugin nf-snapshot:update` to rewrite snapshots from existing outputs, with optional `--profile` and `--outputDir`.
 - Add `snapshot.sizeOnly` to check matching files by size instead of content, so large or remote files are not read.
 
