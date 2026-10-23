@@ -22,8 +22,7 @@ import nextflow.trace.TraceObserverV2
 import nextflow.trace.event.FilePublishEvent
 
 /**
- * Collects every published file and, on completion, writes it to
- * or verifies it against the snapshot file.
+ * Collects published files and, on completion, writes or verifies their snapshot entries.
  */
 @Slf4j
 @CompileStatic
@@ -42,7 +41,7 @@ class SnapshotObserver implements TraceObserverV2 {
         this.session = session
     }
 
-    // called from publish pool threads
+    // Nextflow calls this from publish pool threads.
     @Override
     void onFilePublish(FilePublishEvent event) {
         published.add(event.target.toAbsolutePath().normalize())
@@ -50,7 +49,7 @@ class SnapshotObserver implements TraceObserverV2 {
 
     @Override
     void onFlowComplete() {
-        // Nextflow swallows any observer exception except AbortRunException, which would pass the check silently
+        // Wrap failures in AbortRunException; Nextflow swallows other observer exceptions.
         try {
             check()
         }
@@ -96,7 +95,7 @@ class SnapshotObserver implements TraceObserverV2 {
 
     /**
      * Map each published file under {@code base} to its MD5, {@code size:<bytes>} for size-only files,
-     * or null for name-only files. Published directories are expanded into their files.
+     * or null for name-only files. Expand published directories into their files.
      */
     static Map<String,String> capture(Collection<Path> targets, Path base, List<String> ignore, List<String> nameOnly, List<String> sizeOnly) {
         final outside = targets.findAll { Path it -> !it.startsWith(base) }
@@ -127,7 +126,7 @@ class SnapshotObserver implements TraceObserverV2 {
         return result
     }
 
-    /** MD5 hex of the file content; .gz files are hashed decompressed because the gzip header holds a timestamp. */
+    /** Hash file contents with MD5; decompress .gz files to exclude the gzip header timestamp. */
     static String hash(Path file) {
         final md = MessageDigest.getInstance('MD5')
         InputStream input = Files.newInputStream(file)

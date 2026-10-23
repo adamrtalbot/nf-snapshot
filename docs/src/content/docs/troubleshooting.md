@@ -7,7 +7,7 @@ description: Diagnose output mismatches, invalid baselines, empty captures, and 
 
 Declare the plugin at the top level of `nextflow.config`, then enable `snapshot.enabled` in the profile passed to `-profile`. Nextflow `26.10.0` did not load a plugin declared inside a profile.
 
-Loading the plugin without enabling it is intentionally inactive. If the pipeline itself fails, the plugin logs that it is skipping the snapshot check.
+Set `snapshot.enabled = true` to activate the check. If the pipeline itself fails, the plugin logs that it is skipping the snapshot check.
 
 ## Missing, changed, or unexpected files
 
@@ -22,17 +22,17 @@ nf-snapshot: outputs differ from /path/to/tests/snapshots/test_full.json
 - **Changed:** inspect the output content. Check for timestamps, random seeds, software changes, or ordering differences in aggregated results.
 - **Unexpected:** inspect newly published files and confirm that the run used the intended inputs and profile.
 
-For intentional changes, [update and review the baseline](../usage/#accept-an-intentional-change). Do not update it merely to silence an unexplained failure.
+For intentional changes, [update and review the baseline](../usage/#accept-an-intentional-change). Investigate unexplained failures before accepting new outputs.
 
 ## Files change between identical runs
 
 Sort collections before concatenating them. The arrival order of outputs from concurrent tasks is not deterministic, and `collect()` preserves that arrival order. The [example pipeline](../examples/) orders both collected paths and their concatenated contents.
 
-For unavoidable variation, use `nameOnly` to keep an existence check or `ignore` to omit a file. Gzip header timestamps are already handled by decompression; changing decompressed content still produces a mismatch.
+For unavoidable variation, use `nameOnly` to keep an existence check or `ignore` to omit a file. The plugin decompresses gzip files before hashing, so header timestamps do not affect the check. Changes to decompressed content cause a mismatch.
 
 ## A missing baseline passes
 
-This is expected: a missing snapshot is created automatically. Commit the baseline before using a run to check for regressions. In CI, add an explicit file-existence check as shown in [Usage](../usage/#run-in-ci).
+If the snapshot is missing, the plugin creates it and passes the check. Commit the baseline before using a run to check for regressions. In CI, add an explicit file-existence check as shown in [Usage](../usage/#run-in-ci).
 
 ## An output is outside the base directory
 
@@ -50,7 +50,7 @@ Only publication events from the current run count. Existing files in an output 
 
 ## The snapshot is invalid
 
-When enabled, `snapshot.file` must be configured. Verification also requires readable JSON with a top-level `files` map, using the [documented format](../reference/#json-format).
+Set `snapshot.file` when enabling the check. Provide readable JSON with a top-level `files` map, using the [documented format](../reference/#json-format).
 
 Check the configured path and any manual edits. A missing `files` key, malformed JSON, or unreadable file fails the check. To regenerate a damaged baseline, use update mode and review the replacement before committing it.
 

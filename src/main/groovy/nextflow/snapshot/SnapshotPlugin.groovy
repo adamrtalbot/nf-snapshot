@@ -16,7 +16,7 @@ import org.pf4j.PluginWrapper
 
 /**
  * Adds {@code nextflow plugin nf-snapshot:update [--profile <name>] [--outputDir <dir>]}, which rewrites
- * the snapshot from every file already under the base dir, without re-running the pipeline.
+ * the snapshot from the files under the base directory, without re-running the pipeline.
  *
  * Nextflow 26.04 calls the Launcher overload, later versions call the Map overload.
  * Both build the config from the current directory so the command behaves the same.
@@ -77,7 +77,7 @@ class SnapshotPlugin extends BasePlugin implements PluginExecAware {
         if( !opts.file )
             throw new AbortOperationException("nf-snapshot: `snapshot.file` is not set${profile ? " in profile `${profile}`" : ''} - ${USAGE}")
         final file = resolve(opts.file)
-        // same resolution as Session.outputDir and the observer, so NXF_FILE_ROOT applies
+        // Resolve paths as Session.outputDir and the observer do, so NXF_FILE_ROOT applies
         final base = FileHelper.toCanonicalPath(outputDir ?: opts.baseDir ?: config.outputDir ?: 'results')
         SnapshotObserver.write(file, SnapshotObserver.capture([base], base, opts.ignore, opts.nameOnly, opts.sizeOnly))
         return 0

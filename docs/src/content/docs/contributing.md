@@ -5,7 +5,7 @@ description: Build and test the plugin, work on documentation, and understand ve
 
 ## Plugin development
 
-Use Java 17 or later. The plugin is compiled against Nextflow `26.04.6`.
+Use Java 17 or later. We compile the plugin against Nextflow `26.04.6`.
 
 ```bash
 make test
@@ -13,7 +13,7 @@ make e2e
 pre-commit run --all-files
 ```
 
-`make test` runs the unit tests. `make e2e` installs the plugin locally and runs `validation/run-tests.sh`, checking run output and exit statuses. It needs Nextflow and the tools used by the validation pipeline. Add validation scenarios for changes to observed behaviour and keep pipeline outputs deterministic.
+`make test` runs the unit tests. `make e2e` installs the plugin in your local Nextflow plugins directory and runs `validation/run-tests.sh`, checking run output and exit statuses. It needs Nextflow and the tools used by the validation pipeline. Add validation scenarios for changes to observed behaviour and keep pipeline outputs deterministic.
 
 CI runs lint, unit tests on Java 17 and 21, and end-to-end tests on Nextflow 26.04 and the latest stable release. Configuration additions belong in `SnapshotConfig`, its tests, the README options table, and the documentation reference.
 
@@ -56,12 +56,12 @@ The published site provides:
 
 The site root redirects to `latest`, or to `dev` before the first stable release. The version menu opens the selected version's homepage.
 
-The docs workflow builds pull requests for validation. It deploys development updates from `main`, refreshes release documentation after the `Publish` workflow succeeds, and supports manual reruns. Generated release sites are retained on `gh-pages`, so development updates preserve archived versions. GitHub Pages Actions publishes the assembled site.
+The docs workflow builds pull requests for validation. It deploys development updates from `main`, refreshes release documentation after the `Publish` workflow succeeds, and supports manual reruns. The workflow retains release sites on `gh-pages`, so development updates preserve archived versions. GitHub Pages Actions publishes the assembled site.
 
 For initial repository setup, select **Settings → Pages → Build and deployment → Source → GitHub Actions**. A successful workflow run can then publish the site.
 
 ## Plugin releases
 
-Bump `version` in `build.gradle` and add a matching `CHANGELOG.md` section. When CI succeeds on `main` and that version has no tag, the existing `Publish` workflow publishes the plugin to the Nextflow registry, creates the tag, and creates the GitHub release. It requires the `NF_PLUGIN_PUBLISH_TOKEN` repository secret.
+Bump `version` in `build.gradle` and add a matching `CHANGELOG.md` section. After CI succeeds on `main`, the `Publish` workflow checks for a tag matching that version. If none exists, it publishes to the Nextflow registry, creates the tag, and creates the GitHub release. It requires the `NF_PLUGIN_PUBLISH_TOKEN` repository secret.
 
-Documentation publishing is separate from plugin publishing. A release archive must come from its actual release tag, and only published releases should appear in the version menu.
+Documentation publishing is separate from plugin publishing. Build each release archive from its release tag. Include published releases in the version menu; exclude drafts and prereleases.

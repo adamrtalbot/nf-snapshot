@@ -9,7 +9,7 @@ Use a representative, deterministic pipeline run as your baseline. nf-snapshot c
 
 ## Install the plugin
 
-The plugin is compiled against Nextflow `26.04.6` and requires Java 17 or later. Use a compatible Nextflow release.
+We compile the plugin against Nextflow `26.04.6`. You need Java 17 or later. Use a compatible Nextflow release.
 
 The examples use `nf-snapshot@0.2.0`. If that version has not been published to the Nextflow plugin registry, install it from this repository before running your pipeline:
 
@@ -17,7 +17,7 @@ The examples use `nf-snapshot@0.2.0`. If that version has not been published to 
 make install
 ```
 
-This builds the plugin and installs it into your local Nextflow plugins directory. Run this command from the nf-snapshot checkout, then return to your pipeline directory.
+Run this command from the nf-snapshot checkout to build and install the plugin in your local Nextflow plugins directory. Return to your pipeline directory before continuing.
 
 ## Configure a test profile
 
@@ -59,10 +59,10 @@ profiles {
 
 </CodeWalkthrough>
 
-`ignore` leaves matching files out entirely. `nameOnly` checks that matching files exist without comparing their contents. These patterns match both root-level and nested HTML or log files.
+`ignore` excludes matching files. `nameOnly` checks that matching files exist without comparing their contents. These patterns match both root-level and nested HTML or log files.
 
 :::caution[Load outside profiles]
-Nextflow `26.10.0` did not load the plugin when its declaration was inside a profile. Keep `plugins` at the top level and put only the `snapshot` settings inside the profile. Loading the plugin does not enable the check by itself.
+Nextflow `26.10.0` did not load nf-snapshot from a profile. Keep `plugins` at the top level and put only the `snapshot` settings inside the profile. Loading the plugin does not enable the check by itself.
 :::
 
 ## Create and commit a baseline
@@ -76,10 +76,10 @@ git add tests/snapshots/test_full.json
 git commit -m "Add full-run output snapshot"
 ```
 
-Inspect the generated JSON before committing it. New, untracked files do not appear in `git diff`; open the snapshot directly when creating it for the first time. The plugin creates parent directories as needed.
+Inspect the generated JSON before committing it. Open a new snapshot in your editor; `git diff` omits untracked files. The plugin creates parent directories as needed.
 
 :::note[First-run behaviour]
-A missing snapshot is created automatically, even without `NXF_SNAPSHOT_UPDATE`. It does not fail the run. Committing the baseline is what makes future verification meaningful.
+If the snapshot is missing, nf-snapshot creates it and passes the check, even without `NXF_SNAPSHOT_UPDATE`. Commit the baseline so future runs can detect changes.
 :::
 
 ## Verify future runs
@@ -94,6 +94,6 @@ Matching outputs produce a message such as:
 nf-snapshot: 4 files match /path/to/tests/snapshots/test_full.json
 ```
 
-Different outputs produce a list of missing, changed, and unexpected paths and exit with status `1`. If the pipeline itself fails, nf-snapshot skips the check.
+If outputs differ, nf-snapshot lists missing, changed, and unexpected paths, and the run exits with status `1`. If the pipeline fails, nf-snapshot skips the check.
 
 For deliberate output changes, <a href={`${import.meta.env.BASE_URL}usage/#accept-an-intentional-change`}>update and review the baseline</a>. For a runnable pipeline, continue to <a href={`${import.meta.env.BASE_URL}examples/`}>Examples</a>.
