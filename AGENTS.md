@@ -1,6 +1,6 @@
 # Agent guide
 
-`nf-snapshot` is a Nextflow plugin that compares files published by a workflow
+`nf-snapshot` is a Nextflow plugin that compares the files a workflow publishes
 with a committed JSON snapshot. Read `CLAUDE.md` for architecture, validation,
 and release details. `README.md` and `docs/src/content/docs/` describe the user
 contract; keep them aligned with the implementation.

@@ -8,7 +8,7 @@ import nextflow.script.dsl.Description
 
 @ScopeName('snapshot')
 @Description("""
-    The `snapshot` scope verifies the files published by a run against a committed snapshot file.
+    Use the `snapshot` scope to verify a run's published files against a committed snapshot file.
 """)
 @CompileStatic
 class SnapshotConfig implements ConfigScope {
@@ -33,7 +33,7 @@ class SnapshotConfig implements ConfigScope {
 
     @ConfigOption
     @Description("""
-        Write the snapshot instead of verifying it (default: `false`). Also enabled by `NXF_SNAPSHOT_UPDATE=true`.
+        Write the snapshot instead of verifying it (default: `false`). Use `NXF_SNAPSHOT_UPDATE=true` for the same effect.
     """)
     final boolean update
 
@@ -45,17 +45,17 @@ class SnapshotConfig implements ConfigScope {
 
     @ConfigOption
     @Description("""
-        Glob patterns of relative paths that are checked by name only, without a content hash.
+        Glob patterns of relative paths to check by filename, without a content hash.
     """)
     final List<String> nameOnly
 
     @ConfigOption
     @Description("""
-        Glob patterns of relative paths that are checked by file size only, without reading the content.
+        Glob patterns of relative paths to check by file size, without reading their contents.
     """)
     final List<String> sizeOnly
 
-    /* required by extension point -- do not remove */
+    /* The extension point requires a no-argument constructor. */
     SnapshotConfig() {}
 
     SnapshotConfig(Map opts, Map<String,String> env) {

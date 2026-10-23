@@ -1,12 +1,12 @@
 # nf-snapshot
 
-nf-snapshot checks the files a Nextflow run publishes against a snapshot file committed to the pipeline repository, the way nf-test snapshots work, but for one full-size run. If the outputs differ, the run exits with status 1.
+Use nf-snapshot to compare a full Nextflow run's published files against a JSON snapshot you commit to the pipeline repository. If the outputs differ, the run exits with status 1.
 
 **[Documentation](https://adamrtalbot.github.io/nf-snapshot/latest/)** - **[Development guide](https://adamrtalbot.github.io/nf-snapshot/dev/)**
 
 ## Usage
 
-Declare the plugin at the top level of `nextflow.config`, then enable it in a profile for each test that has a snapshot. Nextflow 26.10.0 did not load the plugin when it was declared inside a profile. The plugin does nothing unless `snapshot.enabled` is set.
+Declare the plugin at the top level of `nextflow.config`, then enable it in a profile for each test that has a snapshot. Nextflow 26.10.0 did not load nf-snapshot from a profile. Set `snapshot.enabled = true` to enable the check.
 
 ```groovy
 plugins { id 'nf-snapshot@0.2.0' }
@@ -56,15 +56,15 @@ Use a directory containing only that run's outputs: the command captures every f
 
 ## Options
 
-| Option     | Default     | Description                                                                           |
-| ---------- | ----------- | ------------------------------------------------------------------------------------- |
-| `enabled`  | `false`     | Enable the check.                                                                     |
-| `file`     |             | Snapshot JSON file. Relative paths resolve against the project directory.             |
-| `baseDir`  | `outputDir` | Directory that snapshot paths are relative to.                                        |
-| `update`   | `false`     | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same. |
-| `ignore`   | `[]`        | Glob patterns of relative paths to leave out of the snapshot.                         |
-| `nameOnly` | `[]`        | Glob patterns of relative paths that are checked by name only.                        |
-| `sizeOnly` | `[]`        | Glob patterns of relative paths that are checked by file size, without reading them.  |
+| Option     | Default     | Description                                                                            |
+| ---------- | ----------- | -------------------------------------------------------------------------------------- |
+| `enabled`  | `false`     | Enable the check.                                                                      |
+| `file`     |             | Snapshot JSON file. Relative paths resolve against the project directory.              |
+| `baseDir`  | `outputDir` | Directory that snapshot paths are relative to.                                         |
+| `update`   | `false`     | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same.  |
+| `ignore`   | `[]`        | Glob patterns of relative paths to leave out of the snapshot.                          |
+| `nameOnly` | `[]`        | Glob patterns of relative paths to check by filename, without a content hash.          |
+| `sizeOnly` | `[]`        | Glob patterns of relative paths to check by file size, without reading their contents. |
 
 Globs use Java `PathMatcher` syntax, so `**/*.html` does not match `report.html` at the top level. Use `{*.html,**/*.html}` to match both.
 
@@ -85,7 +85,7 @@ Each entry holds the MD5 of the file content, `size:<bytes>` for size-only files
 ## Notes
 
 - The plugin captures only the files the current run publishes, through the workflow `output` block or `publishDir`. It ignores other files in the output directory.
-- Every published file must be under `baseDir`. If one is not, or nothing was published, the run fails instead of passing against an empty snapshot.
+- Every published file must be under `baseDir`. If a file is outside `baseDir`, or the run publishes no files, the check fails.
 - With `-resume`, `publishDir` does not overwrite files that already exist for cached tasks. Use an empty output directory, or the check will compare files left over from earlier runs.
 - Outputs must be deterministic. For example, files built from `collect()` can change order between runs, so sort them first or mark them `nameOnly`.
 - The plugin writes JSON with 2-space indentation, so Prettier leaves the file unchanged.
@@ -100,7 +100,7 @@ make e2e        # install the plugin and run validation/run-tests.sh
 pre-commit run --all-files
 ```
 
-CI runs lint, unit tests on Java 17 and 21, and the end-to-end tests on Nextflow 26.04 and the latest stable release. When CI passes on `main` and no tag exists for the version in `build.gradle`, the publish workflow releases the plugin to the Nextflow registry, then tags and creates a GitHub release using the matching `CHANGELOG.md` section. It needs the `NF_PLUGIN_PUBLISH_TOKEN` secret.
+CI runs lint, unit tests on Java 17 and 21, and end-to-end tests on Nextflow 26.04 and the latest stable release. After CI passes on `main`, the publish workflow checks for a tag matching the version in `build.gradle`. If none exists, it publishes to the Nextflow registry, tags the release, and creates a GitHub release from the matching `CHANGELOG.md` section. It needs the `NF_PLUGIN_PUBLISH_TOKEN` secret.
 
 ## License
 

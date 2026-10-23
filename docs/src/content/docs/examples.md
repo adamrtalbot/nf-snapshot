@@ -5,9 +5,9 @@ description: A complete pipeline using process publication, workflow outputs, gz
 
 ## A small full-run snapshot
 
-This example adapts the repository's validation pipeline. The workflow publishes the text files, their compressed copies and a report directory through an `output` block. It is valid under `NXF_SYNTAX_PARSER=v2`.
+This example publishes text files, compressed copies and a report directory through a workflow `output` block.
 
-Save this as `main.nf` in a new directory. It uses `gzip`, `cat`, and `date` from your local environment.
+Save this as `main.nf` in a new directory. You need `gzip`, `cat`, and `date` in your local environment.
 
 ```groovy title="main.nf"
 params {
@@ -56,7 +56,7 @@ workflow {
     main:
     txt = SAY(channel.of('alice', 'bob'))
     gz = ZIP(txt)
-    report = REPORT(txt.collect().map { files -> files.sort { it.name } })
+    report = REPORT(txt.collect())
 
     publish:
     say = txt
@@ -79,8 +79,6 @@ output {
     }
 }
 ```
-
-Concurrent tasks can finish in any order. Sorting the collected paths and explicitly ordering the concatenation makes `report/all.txt` deterministic. Its contents remain part of the snapshot check.
 
 Configure the plugin in the same directory:
 
@@ -121,7 +119,7 @@ report/all.txt
 report/timestamp.log
 ```
 
-The timestamp entry is `null`; the other entries have content hashes. The gzip hashes reflect decompressed text, so a different gzip header timestamp does not change the result. The report directory itself is expanded into its two files.
+The timestamp entry is `null`; the other entries have content hashes. The gzip hashes reflect decompressed text, so a different gzip header timestamp does not change the result. The plugin captures the two files in the report directory.
 
 ## Detect a change
 
@@ -131,7 +129,7 @@ Change the greeting for one run:
 nextflow run . -profile test_full --greeting goodbye
 ```
 
-This exits with status `1` and reports five changed files. The timestamp still passes its name-only check:
+The run exits with status `1` and reports five changed files. The timestamp still passes its name-only check:
 
 ```text
   changed:    gz/alice.txt.gz

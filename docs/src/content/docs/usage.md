@@ -1,6 +1,6 @@
 ---
 title: Usage
-description: Update baselines deliberately, handle unstable files, and check outputs in CI.
+description: Review baseline updates, handle unstable files, and check outputs in CI.
 ---
 
 ## Accept an intentional change
@@ -14,7 +14,7 @@ git diff -- tests/snapshots/test_full.json
 
 Review both the pipeline change and snapshot diff, then commit the baseline with the change it describes. Update mode replaces the snapshot with the current run's captured files.
 
-You can also set `snapshot.update = true` in configuration. Keep that setting out of your usual verification profile: it would accept every run's outputs. The environment variable enables update mode only when its value is exactly `true`; setting it to `false` does not override `snapshot.update = true`.
+You can set `snapshot.update = true` in configuration. Keep that setting out of your usual verification profile: it would accept every run's outputs. Set the environment variable to `true` to enable update mode. Other values do not enable it or override `snapshot.update = true`.
 
 ## Update without re-running
 
@@ -65,13 +65,13 @@ profiles {
 
 Prefer deterministic outputs where possible. For example, sort items collected from concurrent tasks before concatenating their contents. Checking only filenames cannot detect a content regression.
 
-:::caution[Restore content checking explicitly]
+:::caution[Regenerate hashes to restore content checking]
 A `null` hash in either the baseline or the current capture means name-only comparison. Removing a pattern from `nameOnly` does not restore content checking for entries already stored as `null`: regenerate and commit the baseline to store their hashes.
 :::
 
 ## Check large files by size
 
-Hashing reads every byte, and remote outputs such as `s3://` files are downloaded to the head node. For large files, compare only the size, which comes from file metadata:
+To hash a file, the plugin reads its contents, downloading remote outputs such as `s3://` files to the head node. For large files, compare the size from file metadata:
 
 ```groovy title="nextflow.config"
 snapshot {
@@ -83,7 +83,7 @@ A size check misses content changes that keep the same number of bytes. Changing
 
 ## Choose the output root
 
-Snapshot paths are relative to Nextflow's `outputDir`, which is where the workflow `output` block publishes. If your pipeline publishes elsewhere, for example with `publishDir` and `params.outdir`, set `baseDir` explicitly:
+Snapshot paths are relative to Nextflow's `outputDir`, which is where the workflow `output` block publishes. If your pipeline publishes elsewhere, for example with `publishDir` and `params.outdir`, set `baseDir`:
 
 ```groovy title="nextflow.config"
 snapshot {
@@ -97,14 +97,14 @@ All published targets must be under that directory, including targets matched by
 
 ## Run in CI
 
-Commit a baseline created from the same inputs and profile used by CI. After checking out the repository and setting up Nextflow and the pipeline's execution environment, run:
+Create and commit a baseline using the same inputs and profile as CI. After checking out the repository and setting up Nextflow and the pipeline's execution environment, run:
 
 ```bash
 test -f tests/snapshots/test_full.json
 nextflow run . -profile test_full
 ```
 
-The first command makes a missing baseline fail explicitly; nf-snapshot itself would create one. Do not enable update mode in the CI verification job. A snapshot mismatch exits with status `1`.
+The first command fails if the baseline is missing; nf-snapshot would create one. Do not enable update mode in the CI verification job. A snapshot mismatch exits with status `1`.
 
 ## Resume carefully
 

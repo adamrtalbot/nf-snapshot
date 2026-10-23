@@ -3,7 +3,7 @@ title: nf-snapshot
 description: Check the published outputs of a full Nextflow run against a committed snapshot.
 template: splash
 hero:
-  tagline: A snapshot for your whole pipeline.
+  tagline: Check published outputs against a committed snapshot.
   actions:
     - text: Get started
       link: ./getting-started/
@@ -18,7 +18,7 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
 
 nf-snapshot checks the files a Nextflow run publishes against a JSON snapshot committed to your pipeline repository. If a file is missing, changed, or unexpected, the run exits with status `1`.
 
-## Configure once. Check every run.
+## Configure a test profile
 
 Load the plugin at the top level of `nextflow.config`, then enable it in a test profile:
 
@@ -42,7 +42,7 @@ NXF_SNAPSHOT_UPDATE=true nextflow run . -profile test_full
 nextflow run . -profile test_full
 ```
 
-For an unreleased version, install the plugin locally first; see <a href={`${import.meta.env.BASE_URL}getting-started/`}>Getting started</a>.
+For an unreleased version, run `make install` from the nf-snapshot checkout; see <a href={`${import.meta.env.BASE_URL}getting-started/`}>Getting started</a>.
 
 ## See what changed
 
@@ -53,7 +53,7 @@ nf-snapshot: outputs differ from /path/to/tests/snapshots/test_full.json
   unexpected: salmon/sample3/quant.sf
 ```
 
-Only files published by the current run are captured, through workflow outputs or `publishDir`. Compressed `.gz` files are compared after decompression, and published directories are expanded into their files.
+The plugin captures files the current run publishes through workflow outputs or `publishDir`. It decompresses `.gz` files before comparing them and expands published directories into their files.
 
 <CardGrid>
   <Card title="Keep useful checks" icon="approve-check">

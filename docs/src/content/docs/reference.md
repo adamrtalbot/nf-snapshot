@@ -5,31 +5,31 @@ description: Snapshot configuration, path resolution, glob matching, and the JSO
 
 ## Configuration
 
-Declare `plugins { id 'nf-snapshot@0.2.0' }` at the top level of `nextflow.config`. Configure these seven options inside `snapshot { ... }`, usually within a test profile.
+Declare `plugins { id 'nf-snapshot@0.2.0' }` at the top level of `nextflow.config`. Configure these seven options inside `snapshot { ... }` in a test profile.
 
-| Option     | Default     | Meaning                                                                                  |
-| ---------- | ----------- | ---------------------------------------------------------------------------------------- |
-| `enabled`  | `false`     | Enable the check. Loading the plugin alone does nothing.                                 |
-| `file`     | None        | Required when enabled. Path to the snapshot JSON file.                                   |
-| `baseDir`  | `outputDir` | Output root used to form relative snapshot paths.                                        |
-| `update`   | `false`     | Replace the baseline instead of checking it. Also enabled by `NXF_SNAPSHOT_UPDATE=true`. |
-| `ignore`   | `[]`        | List of relative-path glob patterns to exclude.                                          |
-| `nameOnly` | `[]`        | List of relative-path glob patterns to compare by filename only.                         |
-| `sizeOnly` | `[]`        | List of relative-path glob patterns to compare by file size only.                        |
+| Option     | Default     | Meaning                                                                                          |
+| ---------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| `enabled`  | `false`     | Enable the check. Loading the plugin alone does nothing.                                         |
+| `file`     | None        | Required when enabled. Path to the snapshot JSON file.                                           |
+| `baseDir`  | `outputDir` | Output root used to form relative snapshot paths.                                                |
+| `update`   | `false`     | Replace the baseline instead of checking it. Use `NXF_SNAPSHOT_UPDATE=true` for the same effect. |
+| `ignore`   | `[]`        | List of relative-path glob patterns to exclude.                                                  |
+| `nameOnly` | `[]`        | List of relative-path glob patterns to compare by filename only.                                 |
+| `sizeOnly` | `[]`        | List of relative-path glob patterns to compare by file size only.                                |
 
 ### Paths
 
-A relative `snapshot.file` resolves against the pipeline project directory, not the shell's working directory. Absolute paths are used directly.
+A relative `snapshot.file` resolves against the pipeline project directory, not the shell's working directory. You can use an absolute path to select a fixed location.
 
 The output root is `snapshot.baseDir` when set, otherwise Nextflow's `outputDir` (set with `-output-dir`, default `results`).
 
-The selected root is resolved using Nextflow's canonical path handling. Every published target must be under this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
+The plugin resolves the selected root using Nextflow's canonical path handling. Every published target must be under this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
 
 ### Update mode
 
-Update mode is enabled if **either** `snapshot.update` is true **or** `NXF_SNAPSHOT_UPDATE` is exactly the string `true`. Other environment values do not enable it and cannot disable a true configuration value.
+To enable update mode, set `snapshot.update` to true or `NXF_SNAPSHOT_UPDATE` to the string `true`. Other environment values do not enable it and cannot disable a true configuration value.
 
-If the snapshot is missing, the plugin writes it regardless of update mode. A failed pipeline skips capture and comparison.
+If the snapshot is missing, the plugin writes it regardless of update mode. If the pipeline fails, the plugin skips capture and comparison.
 
 ### Glob patterns
 
@@ -43,7 +43,7 @@ Patterns use Java `PathMatcher` glob syntax against each file's relative path. T
 | `{*.html,**/*.html}` | Both root-level and nested HTML files.           |
 | `pipeline_info/**`   | Files below `pipeline_info`.                     |
 
-`ignore` is applied first, then `nameOnly`, then `sizeOnly`. If every captured file is ignored, the run fails with an empty-capture error. Output targets outside `baseDir` fail before ignore patterns are considered.
+The plugin applies `ignore`, then `nameOnly`, then `sizeOnly`. If `ignore` excludes all captured files, the run fails with an empty-capture error. The plugin rejects output targets outside `baseDir` before applying ignore patterns.
 
 ## Update command
 
@@ -51,15 +51,15 @@ Patterns use Java `PathMatcher` glob syntax against each file's relative path. T
 nextflow plugin nf-snapshot:update [--profile <name>] [--outputDir <dir>]
 ```
 
-Rewrites the snapshot from existing outputs without running the pipeline, applying `ignore`, `nameOnly` and `sizeOnly`. It reads the current directory's `nextflow.config`; use `--profile` when the snapshot settings are inside a profile. `-c` files and CLI params are not read. `snapshot.file` is required, and relative snapshot paths resolve against the current directory. `snapshot.enabled` is ignored.
+Use this command to rewrite the snapshot from existing outputs without running the pipeline. It applies `ignore`, `nameOnly` and `sizeOnly` and reads the current directory's `nextflow.config`; use `--profile` for snapshot settings inside a profile. The command ignores `-c` files, CLI params and `snapshot.enabled`. Set `snapshot.file`; relative snapshot paths resolve against the current directory.
 
-The output root is `--outputDir`, falling back to `snapshot.baseDir`, the `outputDir` config setting, then `results`. Relative roots resolve against `NXF_FILE_ROOT` when set, otherwise the current directory. Every file under the root is captured, subject to the snapshot patterns.
+The output root is `--outputDir`, falling back to `snapshot.baseDir`, the `outputDir` config setting, then `results`. Relative roots resolve against `NXF_FILE_ROOT` when set, otherwise the current directory. The command captures each file under the root, subject to the snapshot patterns.
 
 ## Captured files
 
-The plugin records publication events from both workflow `output` blocks and process `publishDir`. It checks only what the current run publishes; unrelated files already in the output directory are not added.
+The plugin records publication events from both workflow `output` blocks and process `publishDir`. It checks files the current run publishes and excludes unrelated files in the output directory.
 
-Published directories are expanded recursively into regular files, following symbolic links. Files ending in `.gz` are decompressed before hashing so gzip header timestamps do not cause differences. Other files are hashed as stored. Remote files are downloaded to calculate their hashes. Size-only files are not read; their size comes from file metadata, and for `.gz` files it is the compressed size.
+For each published directory, the plugin captures the regular files in that directory and its subdirectories, following symbolic links. It decompresses `.gz` files before hashing so gzip header timestamps do not cause differences. It hashes other files as stored and downloads remote files to hash them. For `sizeOnly` files, the plugin reads the size from metadata without reading the contents, using the compressed size for `.gz` files.
 
 ## JSON format
 
@@ -73,13 +73,13 @@ Published directories are expanded recursively into regular files, following sym
 }
 ```
 
-`files` maps relative filenames to lowercase MD5 hashes of their contents. Size-only entries contain `size:<bytes>`. Name-only entries contain `null`. Entries are written in sorted path order with two-space indentation, compatible with Prettier.
+`files` maps relative filenames to lowercase MD5 hashes of their contents. Size-only entries contain `size:<bytes>`. Name-only entries contain `null`. The plugin writes entries in sorted path order with two-space indentation, compatible with Prettier.
 
 Comparison reports:
 
 | Result       | Meaning                                          |
 | ------------ | ------------------------------------------------ |
-| `missing`    | A baseline path was not captured in this run.    |
+| `missing`    | The current capture lacks a baseline path.       |
 | `unexpected` | A captured path is absent from the baseline.     |
 | `changed`    | Both sides have a hash, and those hashes differ. |
 
