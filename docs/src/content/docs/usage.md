@@ -16,6 +16,19 @@ Review both the pipeline change and snapshot diff, then commit the baseline with
 
 You can also set `snapshot.update = true` in configuration. Keep that setting out of your usual verification profile: it would accept every run's outputs. The environment variable enables update mode only when its value is exactly `true`; setting it to `false` does not override `snapshot.update = true`.
 
+## Update without re-running
+
+Rewrite the snapshot from existing outputs:
+
+```bash
+nextflow plugin nf-snapshot:update --profile test_full --outputDir results
+git diff -- tests/snapshots/test_full.json
+```
+
+Run from the project directory. The command reads `nextflow.config` and the selected profile, ignoring `-c` files and CLI params. Use `--outputDir` to select the run's output directory.
+
+It captures every file there, subject to snapshot patterns. Use a directory containing only that run's outputs. See the [command reference](../reference/#update-command) for options and defaults.
+
 ## Ignore outputs
 
 Ignore files that should not be part of the check:

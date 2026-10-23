@@ -73,9 +73,7 @@ class SnapshotObserver implements TraceObserverV2 {
         final actual = capture(published, base, config.ignore, config.nameOnly, config.sizeOnly)
 
         if( config.update || !Files.exists(file) ) {
-            Files.createDirectories(file.parent)
-            Files.writeString(file, toJson(actual))
-            log.info "nf-snapshot: wrote ${actual.size()} files to ${file}"
+            write(file, actual)
             return
         }
 
@@ -151,6 +149,12 @@ class SnapshotObserver implements TraceObserverV2 {
                 result.add("  changed:    ${key}".toString())
         }
         return result
+    }
+
+    static void write(Path file, Map<String,String> files) {
+        Files.createDirectories(file.parent)
+        Files.writeString(file, toJson(files))
+        log.info "nf-snapshot: wrote ${files.size()} files to ${file}"
     }
 
     /** 2-space indent, matching Prettier, so formatting the file does not change it. */
