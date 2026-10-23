@@ -51,7 +51,9 @@ Patterns use Java `PathMatcher` glob syntax against each file's relative path. T
 nextflow plugin nf-snapshot:update [--profile <name>] [--outputDir <dir>]
 ```
 
-Rewrites the snapshot from every file under the output root, applying `ignore`, `nameOnly` and `sizeOnly`, without running the pipeline. This command reads the current directory's `nextflow.config` but you must use `--profile` only for settings inside a profile because the Nextflow plugin command does not read profiles. `-c` files and CLI params are not read. `snapshot.file` must be specified and relative paths resolve against the current directory. `snapshot.enabled` is ignored. Uses the first output root set: `--outputDir`, `snapshot.baseDir`, the `outputDir` config setting, then `results`. Relative roots resolve against `NXF_FILE_ROOT` when set, otherwise the current directory.
+Rewrites the snapshot from existing outputs without running the pipeline, applying `ignore`, `nameOnly` and `sizeOnly`. It reads the current directory's `nextflow.config`; use `--profile` when the snapshot settings are inside a profile. `-c` files and CLI params are not read. `snapshot.file` is required, and relative snapshot paths resolve against the current directory. `snapshot.enabled` is ignored.
+
+The output root is `--outputDir`, falling back to `snapshot.baseDir`, the `outputDir` config setting, then `results`. Relative roots resolve against `NXF_FILE_ROOT` when set, otherwise the current directory. Every file under the root is captured, subject to the snapshot patterns.
 
 ## Captured files
 
