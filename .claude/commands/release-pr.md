@@ -1,3 +1,2 @@
-Prepare a release change for nf-snapshot using
-`.agents/skills/release-pr/SKILL.md`. Check current version and changelog first;
-do not guess missing release details. Request: $ARGUMENTS
+Open an nf-snapshot release PR using `.agents/skills/release-pr/SKILL.md`.
+Optional version (defaults to the next minor or patch): $ARGUMENTS

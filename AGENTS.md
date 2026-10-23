@@ -7,12 +7,14 @@ contract; keep them aligned with the implementation.
 
 ## Workflows
 
-Reusable Codex skills live in `.agents/skills/`. Claude command entry points in
+Reusable agent skills live in `.agents/skills/`; any agent should follow the
+matching `SKILL.md` for these tasks. Claude command entry points in
 `.claude/commands/` route to the same workflows.
 
 - `plugin-review`: review realistic plugin and documentation issues, prioritizing user experience.
 - `docs-site`: maintain the Starlight site and diagnose its GitHub Pages workflow.
-- `release-pr`: prepare a release change and PR using the existing publish workflow.
+- `release-pr`: for any release request, open a release PR (version bump,
+  changelog, checks); merging it publishes the release.
 - `github-issues`: inspect or manage repository issues with `gh` when requested.
 
 ## Project guardrails
@@ -24,4 +26,5 @@ Reusable Codex skills live in `.agents/skills/`. Claude command entry points in
   and `pre-commit run --all-files` for linting.
 - Docs checks run from `docs/`: `npm run check`, `npm test`, and `npm run build`.
 - Never publish, push, create a release, or modify GitHub issues unless the user
-  explicitly requests that action.
+  explicitly requests that action. A release request authorizes the branch,
+  commit, push, and PR steps in `release-pr`, but never merging or publishing.
