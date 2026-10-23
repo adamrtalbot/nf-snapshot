@@ -5,7 +5,7 @@ description: A complete pipeline using process publication, workflow outputs, gz
 
 ## A small full-run snapshot
 
-This example adapts the repository's validation pipeline. The workflow publishes the text files, their compressed copies and a report directory through an `output` block. It is valid under `NXF_SYNTAX_PARSER=v2`.
+This example publishes text files, compressed copies and a report directory through a workflow `output` block.
 
 Save this as `main.nf` in a new directory. You need `gzip`, `cat`, and `date` in your local environment.
 
@@ -56,7 +56,7 @@ workflow {
     main:
     txt = SAY(channel.of('alice', 'bob'))
     gz = ZIP(txt)
-    report = REPORT(txt.collect().map { files -> files.sort { it.name } })
+    report = REPORT(txt.collect())
 
     publish:
     say = txt
@@ -79,8 +79,6 @@ output {
     }
 }
 ```
-
-Concurrent tasks can finish in any order. Sort the collected paths and concatenate the files in that order to keep `report/all.txt` deterministic. Its contents remain part of the snapshot check.
 
 Configure the plugin in the same directory:
 
