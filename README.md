@@ -46,13 +46,13 @@ nf-snapshot: outputs differ from /path/to/tests/snapshots/test_full.json
 
 If the snapshot file does not exist yet, the plugin writes it and does not fail. If the run itself fails, the plugin skips the check.
 
-To accept a change without re-running the pipeline, rewrite the snapshot from the files already in the output directory:
+To accept existing outputs without re-running, run from the project directory:
 
 ```bash
 nextflow plugin nf-snapshot:update --profile test_full --outputDir results
 ```
 
-Run it from the project directory. It reads the `snapshot` settings from `nextflow.config` and the given profile, but not files passed with `-c`. `--profile` is needed only when those settings are inside a profile. `--outputDir` overrides `baseDir`; use it when the run wrote somewhere else, for example with `--outdir`. It has no record of what the last run published, so it snapshots every file under `baseDir`. Point it at an output directory that holds only that run's outputs.
+Use a directory containing only that run's outputs: the command captures every file, subject to snapshot patterns. See the [command reference](https://adamrtalbot.github.io/nf-snapshot/dev/reference/#update-command) for configuration and path resolution.
 
 ## Options
 
