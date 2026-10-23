@@ -37,10 +37,14 @@ sed 's#say/bob.txt#say/carol.txt#' snapshot.json > "$TMP/renamed.json"
 echo '{' > "$TMP/broken.json"
 
 check "outputs match"             0 "6 files match"                 -profile snap
+# Nextflow 26.04 cannot run a local PluginExecAware command by version; latest-stable covers these cases.
+if nextflow -version | grep -q 'version 26\.04\.'; then
+    echo "SKIP  plugin command tests on Nextflow 26.04 (local plugin command lookup is unsupported)"
+else
 # update command rewrites the snapshot from the outputs the previous check left in results/
 cp snapshot.json "$TMP/committed.json"
 echo '{}' > snapshot.json
-nextflow plugin nf-snapshot:update --profile snap > "$TMP/out.log" 2>&1
+nextflow plugin "nf-snapshot@$VERSION:update" --profile snap > "$TMP/out.log" 2>&1
 got=$?
 if [[ $got == 0 ]] && grep -qF "wrote 6 files" "$TMP/out.log" && cmp -s snapshot.json "$TMP/committed.json"; then
     echo "PASS  update command"
@@ -52,7 +56,7 @@ fi
 # --outputDir points the command at outputs outside the configured base dir
 mv results "$TMP/moved"
 echo '{}' > snapshot.json
-nextflow plugin nf-snapshot:update --profile snap --outputDir "$TMP/moved" > "$TMP/out.log" 2>&1
+nextflow plugin "nf-snapshot@$VERSION:update" --profile snap --outputDir "$TMP/moved" > "$TMP/out.log" 2>&1
 got=$?
 if [[ $got == 0 ]] && grep -qF "wrote 6 files" "$TMP/out.log" && cmp -s snapshot.json "$TMP/committed.json"; then
     echo "PASS  update command --outputDir"
@@ -63,7 +67,7 @@ else
 fi
 cp "$TMP/committed.json" snapshot.json
 # unknown arguments fail without touching the snapshot
-nextflow plugin nf-snapshot:update --proflie snap > "$TMP/out.log" 2>&1
+nextflow plugin "nf-snapshot@$VERSION:update" --proflie snap > "$TMP/out.log" 2>&1
 got=$?
 if [[ $got != 0 ]] && grep -qF "unknown argument" "$TMP/out.log" && cmp -s snapshot.json "$TMP/committed.json"; then
     echo "PASS  update command rejects unknown argument"
@@ -77,7 +81,7 @@ mkdir -p "$TMP/root" results
 mv "$TMP/moved" "$TMP/root/results"
 echo stale > results/stale.txt
 echo '{}' > snapshot.json
-NXF_FILE_ROOT="$TMP/root" nextflow plugin nf-snapshot:update --profile snap > "$TMP/out.log" 2>&1
+NXF_FILE_ROOT="$TMP/root" nextflow plugin "nf-snapshot@$VERSION:update" --profile snap > "$TMP/out.log" 2>&1
 got=$?
 if [[ $got == 0 ]] && cmp -s snapshot.json "$TMP/committed.json"; then
     echo "PASS  update command honours NXF_FILE_ROOT"
@@ -87,6 +91,7 @@ else
     FAILED=$((FAILED + 1))
 fi
 cp "$TMP/committed.json" snapshot.json
+fi
 check "content changed"           1 "changed:    say/alice.txt"     -profile snap --greeting hi
 check "file missing"              1 "missing:    say/carol.txt"     -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
 check "file unexpected"           1 "unexpected: say/bob.txt"       -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"

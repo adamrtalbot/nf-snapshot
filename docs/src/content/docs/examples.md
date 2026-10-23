@@ -85,7 +85,7 @@ Concurrent tasks can finish in any order. Sorting the collected paths and explic
 Configure the plugin in the same directory:
 
 ```groovy title="nextflow.config"
-plugins { id 'nf-snapshot@0.1.0' }
+plugins { id 'nf-snapshot@0.2.0' }
 
 profiles {
     test_full {
