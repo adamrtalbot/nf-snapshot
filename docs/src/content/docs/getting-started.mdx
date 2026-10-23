@@ -11,7 +11,7 @@ Use a representative, deterministic pipeline run as your baseline. nf-snapshot c
 
 We compile the plugin against Nextflow `26.04.6`. You need Java 17 or later. Use a compatible Nextflow release.
 
-The examples use `nf-snapshot@0.2.0`. If that version has not been published to the Nextflow plugin registry, install it from this repository before running your pipeline:
+The examples use `nf-snapshot@0.2.1`. If that version has not been published to the Nextflow plugin registry, install it from this repository before running your pipeline:
 
 ```bash
 make install
@@ -26,11 +26,11 @@ Add the plugin to the **top level** of your pipeline's `nextflow.config`. Step t
 <CodeWalkthrough>
 
 ```groovy title="nextflow.config" step="Load the plugin"
-plugins { id 'nf-snapshot@0.2.0' }
+plugins { id 'nf-snapshot@0.2.1' }
 ```
 
 ```groovy title="nextflow.config" step="Enable a test profile"
-plugins { id 'nf-snapshot@0.2.0' }
+plugins { id 'nf-snapshot@0.2.1' }
 
 profiles {
     test_full {
@@ -43,7 +43,7 @@ profiles {
 ```
 
 ```groovy title="nextflow.config" step="Choose what to compare"
-plugins { id 'nf-snapshot@0.2.0' }
+plugins { id 'nf-snapshot@0.2.1' }
 
 profiles {
     test_full {

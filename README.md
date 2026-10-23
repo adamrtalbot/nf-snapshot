@@ -9,7 +9,7 @@ Use nf-snapshot to compare a full Nextflow run's published files against a JSON 
 Declare the plugin at the top level of `nextflow.config`, then enable it in a profile for each test that has a snapshot. Nextflow 26.10.0 did not load nf-snapshot from a profile. Set `snapshot.enabled = true` to enable the check.
 
 ```groovy
-plugins { id 'nf-snapshot@0.2.0' }
+plugins { id 'nf-snapshot@0.2.1' }
 
 profiles {
     test_full {

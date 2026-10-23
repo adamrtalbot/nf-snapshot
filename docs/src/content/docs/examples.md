@@ -83,7 +83,7 @@ output {
 Configure the plugin in the same directory:
 
 ```groovy title="nextflow.config"
-plugins { id 'nf-snapshot@0.2.0' }
+plugins { id 'nf-snapshot@0.2.1' }
 
 profiles {
     test_full {
