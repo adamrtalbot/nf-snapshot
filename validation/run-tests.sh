@@ -62,6 +62,31 @@ else
     FAILED=$((FAILED + 1))
 fi
 cp "$TMP/committed.json" snapshot.json
+# unknown arguments fail without touching the snapshot
+nextflow plugin nf-snapshot:update --proflie snap > "$TMP/out.log" 2>&1
+got=$?
+if [[ $got != 0 ]] && grep -qF "unknown argument" "$TMP/out.log" && cmp -s snapshot.json "$TMP/committed.json"; then
+    echo "PASS  update command rejects unknown argument"
+else
+    echo "FAIL  update command rejects unknown argument: exit $got (want non-zero), snapshot changed or message missing"
+    cat "$TMP/out.log"
+    FAILED=$((FAILED + 1))
+fi
+# a relative output dir resolves against NXF_FILE_ROOT, as it does for the run
+mkdir -p "$TMP/root" results
+mv "$TMP/moved" "$TMP/root/results"
+echo stale > results/stale.txt
+echo '{}' > snapshot.json
+NXF_FILE_ROOT="$TMP/root" nextflow plugin nf-snapshot:update --profile snap > "$TMP/out.log" 2>&1
+got=$?
+if [[ $got == 0 ]] && cmp -s snapshot.json "$TMP/committed.json"; then
+    echo "PASS  update command honours NXF_FILE_ROOT"
+else
+    echo "FAIL  update command honours NXF_FILE_ROOT: exit $got (want 0), snapshot.json differs"
+    cat "$TMP/out.log" snapshot.json
+    FAILED=$((FAILED + 1))
+fi
+cp "$TMP/committed.json" snapshot.json
 check "content changed"           1 "changed:    say/alice.txt"     -profile snap --greeting hi
 check "file missing"              1 "missing:    say/carol.txt"     -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
 check "file unexpected"           1 "unexpected: say/bob.txt"       -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
