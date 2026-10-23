@@ -37,6 +37,10 @@ sed 's#say/bob.txt#say/carol.txt#' snapshot.json > "$TMP/renamed.json"
 echo '{' > "$TMP/broken.json"
 
 check "outputs match"             0 "6 files match"                 -profile snap
+# Nextflow 26.04 cannot run a local PluginExecAware command by version; latest-stable covers these cases.
+if nextflow -version | grep -q 'version 26\.04\.'; then
+    echo "SKIP  plugin command tests on Nextflow 26.04 (local plugin command lookup is unsupported)"
+else
 # update command rewrites the snapshot from the outputs the previous check left in results/
 cp snapshot.json "$TMP/committed.json"
 echo '{}' > snapshot.json
@@ -87,6 +91,7 @@ else
     FAILED=$((FAILED + 1))
 fi
 cp "$TMP/committed.json" snapshot.json
+fi
 check "content changed"           1 "changed:    say/alice.txt"     -profile snap --greeting hi
 check "file missing"              1 "missing:    say/carol.txt"     -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
 check "file unexpected"           1 "unexpected: say/bob.txt"       -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
