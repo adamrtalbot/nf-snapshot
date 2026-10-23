@@ -49,10 +49,10 @@ If the snapshot file does not exist yet, the plugin writes it and does not fail.
 To accept a change without re-running the pipeline, rewrite the snapshot from the files already in the output directory:
 
 ```bash
-nextflow plugin nf-snapshot:update --profile test_full
+nextflow plugin nf-snapshot:update --profile test_full --outputDir results
 ```
 
-Run it from the project directory. It reads `nextflow.config` and the given profile, but not files passed with `-c`. It has no record of what the last run published, so it snapshots every file under `baseDir`. Point it at an output directory that holds only that run's outputs.
+Run it from the project directory. It reads the `snapshot` settings from `nextflow.config` and the given profile, but not files passed with `-c`. `--profile` is needed only when those settings are inside a profile. `--outputDir` overrides `baseDir`; use it when the run wrote somewhere else, for example with `--outdir`. It has no record of what the last run published, so it snapshots every file under `baseDir`. Point it at an output directory that holds only that run's outputs.
 
 ## Options
 

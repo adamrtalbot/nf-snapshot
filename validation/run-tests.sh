@@ -49,6 +49,18 @@ else
     cat "$TMP/out.log"
     FAILED=$((FAILED + 1))
 fi
+# --outputDir points the command at outputs outside the configured base dir
+mv results "$TMP/moved"
+echo '{}' > snapshot.json
+nextflow plugin nf-snapshot:update --profile snap --outputDir "$TMP/moved" > "$TMP/out.log" 2>&1
+got=$?
+if [[ $got == 0 ]] && grep -qF "wrote 6 files" "$TMP/out.log" && cmp -s snapshot.json "$TMP/committed.json"; then
+    echo "PASS  update command --outputDir"
+else
+    echo "FAIL  update command --outputDir: exit $got (want 0), snapshot.json differs or 'wrote 6 files' missing"
+    cat "$TMP/out.log"
+    FAILED=$((FAILED + 1))
+fi
 cp "$TMP/committed.json" snapshot.json
 check "content changed"           1 "changed:    say/alice.txt"     -profile snap --greeting hi
 check "file missing"              1 "missing:    say/carol.txt"     -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"

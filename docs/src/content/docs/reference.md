@@ -48,10 +48,10 @@ Patterns use Java `PathMatcher` glob syntax against each file's relative path. T
 ## Update command
 
 ```bash
-nextflow plugin nf-snapshot:update [--profile <name>]
+nextflow plugin nf-snapshot:update [--profile <name>] [--outputDir <dir>]
 ```
 
-Writes the snapshot from every file under the output root, without running the pipeline. It builds the configuration from `nextflow.config` in the current directory plus the given profile, then resolves a relative `snapshot.file` and the output root against the current directory. It ignores `-c` files and `snapshot.enabled`, fails if `snapshot.file` is not set, and applies `ignore`, `nameOnly` and `sizeOnly` as a run does. The output root defaults to the `outputDir` config setting, or `results`.
+Writes the snapshot from every file under the output root, without running the pipeline. It builds the configuration from `nextflow.config` in the current directory plus the given profile, then resolves a relative `snapshot.file` and the output root against the current directory. It ignores `-c` files and `snapshot.enabled`, fails if `snapshot.file` is not set, and applies `ignore`, `nameOnly` and `sizeOnly` as a run does. The output root is `--outputDir` when given, then `snapshot.baseDir`, then the `outputDir` config setting, then `results`. Leave out `--profile` when the `snapshot` settings are not inside a profile.
 
 ## Captured files
 

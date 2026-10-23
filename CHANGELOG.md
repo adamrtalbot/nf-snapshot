@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add `nextflow plugin nf-snapshot:update` to rewrite the snapshot from an existing output directory without re-running the pipeline.
+- Add `nextflow plugin nf-snapshot:update` to rewrite the snapshot from an existing output directory without re-running the pipeline. `--outputDir` points it at a specific output directory.
 - Add `snapshot.sizeOnly` to check matching files by size instead of content, so large or remote files are not read.
 
 ## [0.1.0]

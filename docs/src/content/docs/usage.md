@@ -21,14 +21,14 @@ You can also set `snapshot.update = true` in configuration. Keep that setting ou
 If a long run finished and only the check failed, rewrite the snapshot from the files already in the output directory:
 
 ```bash
-nextflow plugin nf-snapshot:update --profile test_full
+nextflow plugin nf-snapshot:update --profile test_full --outputDir results
 git diff -- tests/snapshots/test_full.json
 ```
 
 The command does not need `snapshot.enabled`. It applies the same `ignore`, `nameOnly` and `sizeOnly` patterns as a run. Two things differ from update mode:
 
-- It reads `nextflow.config` and the given profile from the current directory, so run it from the project directory. It ignores files passed with `-c`.
-- It snapshots every file under `snapshot.baseDir`, because it has no record of what the run published. Use an output directory that holds only that run's outputs.
+- It reads `nextflow.config` and the given profile from the current directory, so run it from the project directory. It ignores files passed with `-c` and params given on the command line. Pass `--outputDir` when the run's output directory came from a param such as `--outdir`.
+- It snapshots every file in the output directory, because it has no record of what the run published. Use an output directory that holds only that run's outputs.
 
 ## Ignore outputs
 
