@@ -6,6 +6,7 @@ export NXF_SYNTAX_PARSER=v2
 cd "$(dirname "$0")"
 
 VERSION=$(sed -n "s/^version = '\(.*\)'/\1/p" ../build.gradle)
+export NF_SNAPSHOT_VERSION=$VERSION
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP" results' EXIT
 FAILED=0
