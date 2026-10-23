@@ -156,7 +156,11 @@ async function publish() {
       { cwd: root },
     );
     if (branch) {
-      run("git", ["fetch", "origin", "gh-pages"], { cwd: root });
+      run(
+        "git",
+        ["-c", "http.version=HTTP/1.1", "fetch", "origin", "gh-pages"],
+        { cwd: root },
+      );
       run("git", ["worktree", "add", "--detach", archive, "FETCH_HEAD"], {
         cwd: root,
       });
@@ -188,6 +192,8 @@ async function publish() {
       run(
         "git",
         [
+          "-c",
+          "http.version=HTTP/1.1",
           "fetch",
           "origin",
           `refs/tags/${release.tag_name}:refs/tags/${release.tag_name}`,
