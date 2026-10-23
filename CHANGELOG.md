@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.2.1]
+
+- Clarify setup, configuration, and snapshot guidance in the README and documentation.
+- Use HTTP/1.1 for documentation deployment fetches to avoid HTTP/2 failures.
+- Simplify the release PR workflow.
+
 ## [0.2.0]
 
 - Add `nextflow plugin nf-snapshot:update` to rewrite snapshots from existing outputs, with optional `--profile` and `--outputDir`.

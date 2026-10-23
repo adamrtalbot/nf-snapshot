@@ -5,7 +5,7 @@ description: Snapshot configuration, path resolution, glob matching, and the JSO
 
 ## Configuration
 
-Declare `plugins { id 'nf-snapshot@0.2.0' }` at the top level of `nextflow.config`. Configure these seven options inside `snapshot { ... }` in a test profile.
+Declare `plugins { id 'nf-snapshot@0.2.1' }` at the top level of `nextflow.config`. Configure these seven options inside `snapshot { ... }` in a test profile.
 
 | Option     | Default     | Meaning                                                                                          |
 | ---------- | ----------- | ------------------------------------------------------------------------------------------------ |
