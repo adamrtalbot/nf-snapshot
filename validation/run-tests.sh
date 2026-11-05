@@ -36,6 +36,7 @@ config() {
 sed 's#say/bob.txt#say/carol.txt#' snapshot.json > "$TMP/renamed.json"
 grep -v 'gz/bob.txt.gz' snapshot.json > "$TMP/extra.json"
 echo '{' > "$TMP/broken.json"
+{ echo '{"files": {'; grep '"say/' snapshot.json | sed 's#"say/#"#'; echo '}}'; } > "$TMP/say.json"
 
 check "outputs match"             0 "6 files match"                 -profile snap
 # Nextflow 26.04 cannot run a local PluginExecAware command by version; latest-stable covers these cases.
@@ -96,11 +97,20 @@ fi
 check "content changed"           1 "changed:    say/alice.txt"     -profile snap --greeting hi
 # workflow.success is what onComplete handlers and Seqera Platform report
 check "mismatch sets workflow.success" 1 "workflow.success=false"  -profile snap --greeting hi -c "$(config 'workflow.onComplete = { println "workflow.success=${workflow.success}" }')"
+# the run history that `nextflow log` reads records the failure too
+if nextflow log | tail -1 | grep -qw ERR; then
+    echo "PASS  mismatch fails in nextflow log"
+else
+    echo "FAIL  mismatch fails in nextflow log: last run not ERR"
+    nextflow log | tail -2
+    FAILED=$((FAILED + 1))
+fi
 check "file missing"              1 "missing:    say/carol.txt"     -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
 check "unexpected file warns"      0 "unexpected: gz/bob.txt.gz"     -profile snap -c "$(config "snapshot.file = '$TMP/extra.json'")"
 check "failOnUnexpected fails"    1 "unexpected: gz/bob.txt.gz"     -profile snap -c "$(config "snapshot { file = '$TMP/extra.json'; failOnUnexpected = true }")"
 check "broken snapshot fails"     1 "check failed"                  -profile snap -c "$(config "snapshot.file = '$TMP/broken.json'")"
 check "outputs outside base dir"  1 "no published files found"      -profile snap -c "$(config "snapshot.baseDir = '$TMP/elsewhere'")"
+check "outputs outside base dir ignored" 0 "2 files match"      -profile snap -c "$(config "snapshot { file = '$TMP/say.json'; baseDir = 'results/say' }")"
 check "file option required"      1 "snapshot.file"                 -profile snap -c "$(config "snapshot.file = null")"
 check "disabled by default"       0 ""
 if grep -q "nf-snapshot:" "$TMP/out.log"; then

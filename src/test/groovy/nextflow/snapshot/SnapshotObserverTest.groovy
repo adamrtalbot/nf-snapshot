@@ -15,6 +15,8 @@ import nextflow.trace.event.FilePublishEvent
 import spock.lang.Specification
 import spock.lang.TempDir
 
+import static nextflow.snapshot.SnapshotObserver.Difference.*
+
 class SnapshotObserverTest extends Specification {
 
     @TempDir
@@ -103,12 +105,18 @@ class SnapshotObserverTest extends Specification {
         SnapshotObserver.diff(
             [same: '1', changed: '1', gone: '1', nameOnly: null],
             [same: '1', changed: '2', added: '1', nameOnly: '9']
-        ) == ['  unexpected: added', '  changed:    changed', '  missing:    gone']
+        ) == [added: UNEXPECTED, changed: CHANGED, gone: MISSING]
+    }
+
+    def 'should format differences as aligned lines'() {
+        expect:
+        SnapshotObserver.format([added: UNEXPECTED, changed: CHANGED, gone: MISSING]) ==
+            '  unexpected: added\n  changed:    changed\n  missing:    gone'
     }
 
     def 'should report no difference for equal snapshots'() {
         expect:
-        SnapshotObserver.diff([a: '1', b: null], [a: '1', b: null]) == []
+        SnapshotObserver.diff([a: '1', b: null], [a: '1', b: null]) == [:]
     }
 
     // --- verify
@@ -119,7 +127,7 @@ class SnapshotObserverTest extends Specification {
         def snap = tmp.resolve('snap/test.json')
 
         when:
-        complete(out, [file: snap.toString()])
+        runVerify(out, [file: snap.toString()])
 
         then:
         Files.exists(snap)
@@ -138,10 +146,10 @@ class SnapshotObserverTest extends Specification {
         given:
         def out = publish('a.txt': 'hello')
         def snap = tmp.resolve('test.json')
-        complete(out, [file: snap.toString()])
+        runVerify(out, [file: snap.toString()])
 
         expect:
-        complete(out, [file: snap.toString()]) == null
+        runVerify(out, [file: snap.toString()]) == null
     }
 
     def 'should resolve base dir as baseDir, then outputDir, then params.outdir'() {
@@ -151,9 +159,9 @@ class SnapshotObserverTest extends Specification {
         def snap = tmp.resolve('test.json').toString()
 
         expect:
-        complete(out, [file: snap, baseDir: null], true, [outdir: out.toString()]) == null
-        complete(out, [file: snap, baseDir: null], true, [outdir: other], [outputDir: out.toString()]) == null
-        complete(out, [file: snap], true, [outdir: other], [outputDir: other]) == null
+        runVerify(out, [file: snap, baseDir: null], true, [outdir: out.toString()]) == null
+        runVerify(out, [file: snap, baseDir: null], true, [outdir: other], [outputDir: out.toString()]) == null
+        runVerify(out, [file: snap], true, [outdir: other], [outputDir: other]) == null
     }
 
     def 'should fall back to results with omitted outdir in strict mode'() {
@@ -167,10 +175,10 @@ class SnapshotObserverTest extends Specification {
 
         expect:
         NF.isStrictMode()
-        complete(out, [file: snap.toString(), baseDir: null]) == null
+        runVerify(out, [file: snap.toString(), baseDir: null]) == null
         new JsonSlurper().parse(snap.toFile()) == [files: ['a.txt': '5d41402abc4b2a76b9719d911017c592']]
-        complete(out, [file: snap.toString(), baseDir: null], true, [:], [outputDir: out.toString()]) == null
-        complete(out, [file: snap.toString()]) == null
+        runVerify(out, [file: snap.toString(), baseDir: null], true, [:], [outputDir: out.toString()]) == null
+        runVerify(out, [file: snap.toString()]) == null
 
         cleanup:
         SysEnv.pop()
@@ -183,9 +191,9 @@ class SnapshotObserverTest extends Specification {
         def snap = tmp.resolve('test.json').toString()
 
         expect:
-        complete(out, [file: snap, baseDir: null], true, [outdir: out.toString()], [outputDir: tmp.resolve('other').toString()])
+        runVerify(out, [file: snap, baseDir: null], true, [outdir: out.toString()], [outputDir: tmp.resolve('other').toString()])
             .message.contains('no published files')
-        complete(out, [file: snap, baseDir: null]).message.contains('no published files')
+        runVerify(out, [file: snap, baseDir: null]).message.contains('no published files')
     }
 
     def 'should fail when outputs differ'() {
@@ -194,7 +202,7 @@ class SnapshotObserverTest extends Specification {
         snap.text = '{"files": {"a.txt": "0"}}'
 
         when:
-        def e = complete(publish('a.txt': 'hello'), [file: snap.toString()])
+        def e = runVerify(publish('a.txt': 'hello'), [file: snap.toString()])
 
         then:
         e instanceof AbortRunException
@@ -208,8 +216,8 @@ class SnapshotObserverTest extends Specification {
         snap.text = '{"files": {"a.txt": "5d41402abc4b2a76b9719d911017c592"}}'
 
         expect:
-        complete(out, [file: snap.toString()]) == null
-        complete(out, [file: snap.toString(), failOnUnexpected: true]).message.contains('1 difference')
+        runVerify(out, [file: snap.toString()]) == null
+        runVerify(out, [file: snap.toString(), failOnUnexpected: true]).message.contains('1 difference')
     }
 
     def 'should overwrite snapshot in update mode'() {
@@ -218,7 +226,7 @@ class SnapshotObserverTest extends Specification {
         snap.text = '{"files": {"a.txt": "0"}}'
 
         when:
-        complete(publish('a.txt': 'hello'), [file: snap.toString(), update: true])
+        runVerify(publish('a.txt': 'hello'), [file: snap.toString(), update: true])
 
         then:
         new JsonSlurper().parse(snap.toFile()) == [files: ['a.txt': '5d41402abc4b2a76b9719d911017c592']]
@@ -229,7 +237,7 @@ class SnapshotObserverTest extends Specification {
         def snap = tmp.resolve('test.json')
 
         when:
-        complete(publish('a.txt': 'hello'), [file: snap.toString()], false)
+        runVerify(publish('a.txt': 'hello'), [file: snap.toString()], false)
 
         then:
         !Files.exists(snap)
@@ -237,7 +245,7 @@ class SnapshotObserverTest extends Specification {
 
     def 'should resolve relative snapshot file against project dir'() {
         when:
-        complete(publish('a.txt': 'hello'), [file: 'tests/test.json'])
+        runVerify(publish('a.txt': 'hello'), [file: 'tests/test.json'])
 
         then:
         Files.exists(tmp.resolve('project/tests/test.json'))
@@ -249,7 +257,7 @@ class SnapshotObserverTest extends Specification {
         snap.text = content
 
         when:
-        def e = complete(publish('a.txt': 'hello'), [file: snap.toString()])
+        def e = runVerify(publish('a.txt': 'hello'), [file: snap.toString()])
 
         then:
         e instanceof AbortRunException
@@ -274,7 +282,7 @@ class SnapshotObserverTest extends Specification {
     }
 
     /** Run the check and return the error passed to {@code session.abort}, or null. */
-    private Throwable complete(Path out, Map opts, boolean success = true, Map params = [:], Map config = [:]) {
+    private Throwable runVerify(Path out, Map opts, boolean success = true, Map params = [:], Map config = [:]) {
         Throwable aborted = null
         def session = Mock(Session) {
             isSuccess() >> success

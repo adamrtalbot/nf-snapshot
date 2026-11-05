@@ -28,6 +28,8 @@ import nextflow.trace.event.FilePublishEvent
 @CompileStatic
 class SnapshotObserver implements TraceObserverV2 {
 
+    static enum Difference { MISSING, UNEXPECTED, CHANGED }
+
     private final SnapshotConfig config
     private final Session session
     private final Set<Path> published = ConcurrentHashMap.newKeySet()
@@ -68,8 +70,9 @@ class SnapshotObserver implements TraceObserverV2 {
             return
         }
         final file = snapshotFile()
-        // Same order as the update command; 'results' resolves as Session.outputDir does
-        final base = FileHelper.toCanonicalPath(config.baseDir ?: session.config.get('outputDir') ?: (session.params.containsKey('outdir') ? session.params.get('outdir') : null) ?: 'results')
+        // Strict-mode ParamsMap throws on undeclared params
+        final outdir = session.params.containsKey('outdir') ? session.params.get('outdir') : null
+        final base = outputRoot(config.baseDir, session.config.get('outputDir'), outdir)
         // ponytail: hashes serially, parallelise if full-size runs are slow
         final actual = capture(published, base, config.ignore, config.nameOnly, config.sizeOnly)
 
@@ -82,15 +85,24 @@ class SnapshotObserver implements TraceObserverV2 {
         if( expected == null )
             fail("nf-snapshot: ${file} has no `files` key")
         final problems = diff(expected, actual)
-        final failures = config.failOnUnexpected ? problems : problems.findAll { String it -> !it.startsWith('  unexpected:') }
-        if( !failures ) {
-            if( problems )
-                log.warn "nf-snapshot: files not in ${file}\n${problems.join('\n')}\nSet `snapshot.failOnUnexpected = true` to fail on these"
-            log.info "nf-snapshot: ${expected.size()} files match ${file}"
-            return
+        final unexpected = problems.findAll { k, v -> v == Difference.UNEXPECTED }
+        final failures = config.failOnUnexpected ? problems : problems.findAll { k, v -> v != Difference.UNEXPECTED }
+        if( unexpected && !config.failOnUnexpected )
+            log.warn "nf-snapshot: files not in ${file}\n${format(unexpected)}\nSet `snapshot.failOnUnexpected = true` to fail on these"
+        if( failures ) {
+            log.error "nf-snapshot: outputs differ from ${file}\n${format(failures)}\nRe-run with NXF_SNAPSHOT_UPDATE=true to accept the changes"
+            throw new AbortRunException("nf-snapshot: ${failures.size()} difference(s) from snapshot")
         }
-        log.error "nf-snapshot: outputs differ from ${file}\n${problems.join('\n')}\nRe-run with NXF_SNAPSHOT_UPDATE=true to accept the changes"
-        throw new AbortRunException("nf-snapshot: ${failures.size()} difference(s) from snapshot")
+        log.info "nf-snapshot: ${expected.size()} files match ${file}"
+    }
+
+    /**
+     * Root that snapshot paths are relative to: {@code snapshot.baseDir}, then {@code outputDir}, then
+     * {@code params.outdir}, then {@code results}. Resolved as Session.outputDir is, so NXF_FILE_ROOT applies.
+     * The update command uses the same order.
+     */
+    static Path outputRoot(String baseDir, Object outputDir, Object outdir) {
+        return FileHelper.toCanonicalPath(baseDir ?: outputDir ?: outdir ?: 'results')
     }
 
     private Path snapshotFile() {
@@ -138,18 +150,22 @@ class SnapshotObserver implements TraceObserverV2 {
         return md.digest().encodeHex().toString()
     }
 
-    /** A null hash on either side means name only. */
-    static List<String> diff(Map<String,String> expected, Map<String,String> actual) {
-        final result = new ArrayList<String>()
-        for( String key : new TreeSet<String>(expected.keySet() + actual.keySet()) ) {
+    /** Map each differing path to how it differs, sorted by path. A null hash on either side means name only. */
+    static Map<String,Difference> diff(Map<String,String> expected, Map<String,String> actual) {
+        final result = new TreeMap<String,Difference>()
+        for( String key : expected.keySet() + actual.keySet() ) {
             if( !actual.containsKey(key) )
-                result.add("  missing:    ${key}".toString())
+                result.put(key, Difference.MISSING)
             else if( !expected.containsKey(key) )
-                result.add("  unexpected: ${key}".toString())
+                result.put(key, Difference.UNEXPECTED)
             else if( expected[key] != null && actual[key] != null && expected[key] != actual[key] )
-                result.add("  changed:    ${key}".toString())
+                result.put(key, Difference.CHANGED)
         }
         return result
+    }
+
+    static String format(Map<String,Difference> diffs) {
+        return diffs.collect { path, kind -> "  ${(kind.name().toLowerCase() + ':').padRight(12)}${path}" }.join('\n')
     }
 
     static void write(Path file, Map<String,String> files) {
