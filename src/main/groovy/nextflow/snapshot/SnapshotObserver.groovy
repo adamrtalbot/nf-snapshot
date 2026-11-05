@@ -28,16 +28,14 @@ import nextflow.trace.event.FilePublishEvent
 @CompileStatic
 class SnapshotObserver implements TraceObserverV2 {
 
+    static enum Difference { MISSING, UNEXPECTED, CHANGED }
+
     private final SnapshotConfig config
+    private final Session session
     private final Set<Path> published = ConcurrentHashMap.newKeySet()
-    private Session session
 
-    SnapshotObserver(SnapshotConfig config) {
+    SnapshotObserver(SnapshotConfig config, Session session) {
         this.config = config
-    }
-
-    @Override
-    void onFlowCreate(Session session) {
         this.session = session
     }
 
@@ -47,17 +45,22 @@ class SnapshotObserver implements TraceObserverV2 {
         published.add(event.target.toAbsolutePath().normalize())
     }
 
-    @Override
-    void onFlowComplete() {
-        // Wrap failures in AbortRunException; Nextflow swallows other observer exceptions.
+    /**
+     * Run as a session shutdown hook (see {@link SnapshotFactory}): publishing has finished but
+     * `workflow.success`, which onComplete handlers and Seqera Platform read, is not yet set.
+     * Nextflow swallows exceptions from shutdown hooks, so mark the run failed with {@code session.abort}.
+     */
+    void verify() {
         try {
             check()
         }
         catch( AbortRunException e ) {
-            throw e
+            session.abort(e)
         }
         catch( Exception e ) {
-            fail("nf-snapshot: check failed - ${e.message ?: e.class.name}")
+            final message = "nf-snapshot: check failed - ${e.message ?: e.class.name}".toString()
+            log.error message
+            session.abort(new AbortRunException(message))
         }
     }
 
@@ -67,7 +70,9 @@ class SnapshotObserver implements TraceObserverV2 {
             return
         }
         final file = snapshotFile()
-        final base = FileHelper.toCanonicalPath(config.baseDir ?: session.outputDir)
+        // Strict-mode ParamsMap throws on undeclared params
+        final outdir = session.params.containsKey('outdir') ? session.params.get('outdir') : null
+        final base = outputRoot(config.baseDir, session.config.get('outputDir'), outdir)
         // ponytail: hashes serially, parallelise if full-size runs are slow
         final actual = capture(published, base, config.ignore, config.nameOnly, config.sizeOnly)
 
@@ -80,12 +85,24 @@ class SnapshotObserver implements TraceObserverV2 {
         if( expected == null )
             fail("nf-snapshot: ${file} has no `files` key")
         final problems = diff(expected, actual)
-        if( !problems ) {
-            log.info "nf-snapshot: ${actual.size()} files match ${file}"
-            return
+        final unexpected = problems.findAll { k, v -> v == Difference.UNEXPECTED }
+        final failures = config.failOnUnexpected ? problems : problems.findAll { k, v -> v != Difference.UNEXPECTED }
+        if( unexpected && !config.failOnUnexpected )
+            log.warn "nf-snapshot: files not in ${file}\n${format(unexpected)}\nSet `snapshot.failOnUnexpected = true` to fail on these"
+        if( failures ) {
+            log.error "nf-snapshot: outputs differ from ${file}\n${format(failures)}\nRe-run with NXF_SNAPSHOT_UPDATE=true to accept the changes"
+            throw new AbortRunException("nf-snapshot: ${failures.size()} difference(s) from snapshot")
         }
-        log.error "nf-snapshot: outputs differ from ${file}\n${problems.join('\n')}\nRe-run with NXF_SNAPSHOT_UPDATE=true to accept the changes"
-        throw new AbortRunException("nf-snapshot: ${problems.size()} difference(s) from snapshot")
+        log.info "nf-snapshot: ${expected.size()} files match ${file}"
+    }
+
+    /**
+     * Root that snapshot paths are relative to: {@code snapshot.baseDir}, then {@code outputDir}, then
+     * {@code params.outdir}, then {@code results}. Resolved as Session.outputDir is, so NXF_FILE_ROOT applies.
+     * The update command uses the same order.
+     */
+    static Path outputRoot(String baseDir, Object outputDir, Object outdir) {
+        return FileHelper.toCanonicalPath(baseDir ?: outputDir ?: outdir ?: 'results')
     }
 
     private Path snapshotFile() {
@@ -98,15 +115,12 @@ class SnapshotObserver implements TraceObserverV2 {
      * or null for name-only files. Expand published directories into their files.
      */
     static Map<String,String> capture(Collection<Path> targets, Path base, List<String> ignore, List<String> nameOnly, List<String> sizeOnly) {
-        final outside = targets.findAll { Path it -> !it.startsWith(base) }
-        if( outside )
-            fail("nf-snapshot: ${outside.size()} published file(s) outside snapshot base dir ${base}, e.g. ${outside.take(3).join(', ')}. Set `snapshot.baseDir`")
-
         final ignoreMatchers = matchers(ignore)
         final nameOnlyMatchers = matchers(nameOnly)
         final sizeOnlyMatchers = matchers(sizeOnly)
         final result = new TreeMap<String,String>()
-        for( Path target : targets ) {
+        // Outputs outside the base dir are not part of the snapshot
+        for( Path target : targets.findAll { Path it -> it.startsWith(base) } ) {
             Files.walk(target, FileVisitOption.FOLLOW_LINKS).withCloseable { stream ->
                 stream.filter { Path it -> Files.isRegularFile(it) }.forEach { Path it ->
                     final rel = base.relativize(it).toString()
@@ -122,7 +136,7 @@ class SnapshotObserver implements TraceObserverV2 {
             }
         }
         if( !result )
-            fail("nf-snapshot: no published files found under ${base}")
+            fail("nf-snapshot: no published files found under ${base}. Set `snapshot.baseDir` if outputs are elsewhere")
         return result
     }
 
@@ -136,18 +150,22 @@ class SnapshotObserver implements TraceObserverV2 {
         return md.digest().encodeHex().toString()
     }
 
-    /** A null hash on either side means name only. */
-    static List<String> diff(Map<String,String> expected, Map<String,String> actual) {
-        final result = new ArrayList<String>()
-        for( String key : new TreeSet<String>(expected.keySet() + actual.keySet()) ) {
+    /** Map each differing path to how it differs, sorted by path. A null hash on either side means name only. */
+    static Map<String,Difference> diff(Map<String,String> expected, Map<String,String> actual) {
+        final result = new TreeMap<String,Difference>()
+        for( String key : expected.keySet() + actual.keySet() ) {
             if( !actual.containsKey(key) )
-                result.add("  missing:    ${key}".toString())
+                result.put(key, Difference.MISSING)
             else if( !expected.containsKey(key) )
-                result.add("  unexpected: ${key}".toString())
+                result.put(key, Difference.UNEXPECTED)
             else if( expected[key] != null && actual[key] != null && expected[key] != actual[key] )
-                result.add("  changed:    ${key}".toString())
+                result.put(key, Difference.CHANGED)
         }
         return result
+    }
+
+    static String format(Map<String,Difference> diffs) {
+        return diffs.collect { path, kind -> "  ${(kind.name().toLowerCase() + ':').padRight(12)}${path}" }.join('\n')
     }
 
     static void write(Path file, Map<String,String> files) {

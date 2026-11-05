@@ -94,6 +94,6 @@ Matching outputs produce a message such as:
 nf-snapshot: 4 files match /path/to/tests/snapshots/test_full.json
 ```
 
-If outputs differ, nf-snapshot lists missing, changed, and unexpected paths, and the run exits with status `1`. If the pipeline fails, nf-snapshot skips the check.
+If outputs differ, nf-snapshot lists missing, changed, and unexpected paths. Missing or changed paths make the run exit with status `1`. For unexpected paths, nf-snapshot logs a warning unless you set `failOnUnexpected = true`. If the pipeline fails, nf-snapshot skips the check.
 
 For deliberate output changes, <a href={`${import.meta.env.BASE_URL}usage/#accept-an-intentional-change`}>update and review the baseline</a>. For a runnable pipeline, continue to <a href={`${import.meta.env.BASE_URL}examples/`}>Examples</a>.

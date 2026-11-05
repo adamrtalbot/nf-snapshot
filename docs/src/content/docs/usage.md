@@ -45,7 +45,7 @@ profiles {
 }
 ```
 
-Patterns apply to paths relative to `snapshot.baseDir`. Ignored files have no baseline entry. Regenerate the snapshot after changing these patterns so old entries do not appear as missing.
+Patterns apply to paths relative to the [resolved output root](#choose-the-output-root). Ignored files have no baseline entry. Regenerate the snapshot after changing these patterns so old entries do not appear as missing.
 
 ## Check filenames without contents
 
@@ -83,7 +83,7 @@ A size check misses content changes that keep the same number of bytes. Changing
 
 ## Choose the output root
 
-Snapshot paths are relative to Nextflow's `outputDir`, which is where the workflow `output` block publishes. If your pipeline publishes elsewhere, for example with `publishDir` and `params.outdir`, set `baseDir`:
+Snapshot paths are relative to the first of these that is set: `snapshot.baseDir`, Nextflow's `outputDir`, `params.outdir`, then `results`. Pipelines that publish with the workflow `output` block or with `publishDir` under `params.outdir` work without extra configuration. If your pipeline publishes elsewhere, set `baseDir`:
 
 ```groovy title="nextflow.config"
 snapshot {
@@ -93,7 +93,7 @@ snapshot {
 }
 ```
 
-All published targets must be under that directory, including targets matched by `ignore`. Files elsewhere cause a failure. See [path resolution](../reference/#paths) for details.
+The plugin ignores files published outside that directory. Snapshot entries that do not appear under it fail the check as `missing`. See [path resolution](../reference/#paths) for details.
 
 ## Run in CI
 

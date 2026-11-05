@@ -44,7 +44,7 @@ nf-snapshot: outputs differ from /path/to/tests/snapshots/test_full.json
   unexpected: salmon/sample3/quant.sf
 ```
 
-If the snapshot file does not exist yet, the plugin writes it and does not fail. If the run itself fails, the plugin skips the check.
+Missing and changed files fail the run. The plugin warns about unexpected files (published but not in the snapshot) unless you set `failOnUnexpected = true`. If the snapshot file does not exist yet, the plugin writes it and does not fail. If the run itself fails, the plugin skips the check.
 
 To accept existing outputs without re-running, run from the project directory:
 
@@ -56,15 +56,16 @@ Use a directory containing only that run's outputs: the command captures every f
 
 ## Options
 
-| Option     | Default     | Description                                                                            |
-| ---------- | ----------- | -------------------------------------------------------------------------------------- |
-| `enabled`  | `false`     | Enable the check.                                                                      |
-| `file`     |             | Snapshot JSON file. Relative paths resolve against the project directory.              |
-| `baseDir`  | `outputDir` | Directory that snapshot paths are relative to.                                         |
-| `update`   | `false`     | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same.  |
-| `ignore`   | `[]`        | Glob patterns of relative paths to leave out of the snapshot.                          |
-| `nameOnly` | `[]`        | Glob patterns of relative paths to check by filename, without a content hash.          |
-| `sizeOnly` | `[]`        | Glob patterns of relative paths to check by file size, without reading their contents. |
+| Option             | Default                                           | Description                                                                            |
+| ------------------ | ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `enabled`          | `false`                                           | Enable the check.                                                                      |
+| `file`             |                                                   | Snapshot JSON file. Relative paths resolve against the project directory.              |
+| `baseDir`          | `outputDir`, then `params.outdir`, then `results` | Directory that snapshot paths are relative to.                                         |
+| `update`           | `false`                                           | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same.  |
+| `failOnUnexpected` | `false`                                           | Fail on published files that are not in the snapshot, instead of logging a warning.    |
+| `ignore`           | `[]`                                              | Glob patterns of relative paths to leave out of the snapshot.                          |
+| `nameOnly`         | `[]`                                              | Glob patterns of relative paths to check by filename, without a content hash.          |
+| `sizeOnly`         | `[]`                                              | Glob patterns of relative paths to check by file size, without reading their contents. |
 
 Globs use Java `PathMatcher` syntax, so `**/*.html` does not match `report.html` at the top level. Use `{*.html,**/*.html}` to match both.
 
@@ -85,12 +86,11 @@ Each entry holds the MD5 of the file content, `size:<bytes>` for size-only files
 ## Notes
 
 - The plugin captures only the files the current run publishes, through the workflow `output` block or `publishDir`. It ignores other files in the output directory.
-- Every published file must be under `baseDir`. If a file is outside `baseDir`, or the run publishes no files, the check fails.
+- The plugin compares the snapshot with files published under the resolved output root and ignores files published elsewhere. The root is `snapshot.baseDir`, then `outputDir`, then `params.outdir`, then `results`. A snapshot entry with no matching file fails the check as `missing`. If the run publishes nothing under the root, the check fails.
 - With `-resume`, `publishDir` does not overwrite files that already exist for cached tasks. Use an empty output directory, or the check will compare files left over from earlier runs.
 - Outputs must be deterministic. For example, files built from `collect()` can change order between runs, so sort them first or mark them `nameOnly`.
 - The plugin writes JSON with 2-space indentation, so Prettier leaves the file unchanged.
 - The plugin downloads remote outputs (for example `s3://`) to hash them. Mark large remote files `sizeOnly` to check their size from metadata instead.
-- A failed check skips part of Nextflow's shutdown, and the run history records the run as successful. `-resume` still reuses cached tasks.
 
 ## Development
 

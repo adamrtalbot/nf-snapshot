@@ -27,7 +27,7 @@ class SnapshotConfig implements ConfigScope {
 
     @ConfigOption
     @Description("""
-        Directory that snapshot paths are relative to (default: `outputDir`).
+        Directory that snapshot paths are relative to (default: `outputDir` if set, else `params.outdir`, else `results`).
     """)
     final String baseDir
 
@@ -36,6 +36,12 @@ class SnapshotConfig implements ConfigScope {
         Write the snapshot instead of verifying it (default: `false`). Use `NXF_SNAPSHOT_UPDATE=true` for the same effect.
     """)
     final boolean update
+
+    @ConfigOption
+    @Description("""
+        Fail the check when the run publishes files that are not in the snapshot (default: `false`, which logs a warning).
+    """)
+    final boolean failOnUnexpected
 
     @ConfigOption
     @Description("""
@@ -63,6 +69,7 @@ class SnapshotConfig implements ConfigScope {
         this.file = opts.file as String
         this.baseDir = opts.baseDir as String
         this.update = opts.update as boolean || env.get('NXF_SNAPSHOT_UPDATE') == 'true'
+        this.failOnUnexpected = opts.failOnUnexpected as boolean
         this.ignore = (opts.ignore ?: []) as List<String>
         this.nameOnly = (opts.nameOnly ?: []) as List<String>
         this.sizeOnly = (opts.sizeOnly ?: []) as List<String>

@@ -5,11 +5,17 @@ import java.nio.file.Path
 import java.util.zip.GZIPOutputStream
 
 import groovy.json.JsonSlurper
+import nextflow.NF
+import nextflow.NextflowMeta
 import nextflow.Session
+import nextflow.SysEnv
 import nextflow.exception.AbortRunException
+import nextflow.script.ScriptBinding.ParamsMap
 import nextflow.trace.event.FilePublishEvent
 import spock.lang.Specification
 import spock.lang.TempDir
+
+import static nextflow.snapshot.SnapshotObserver.Difference.*
 
 class SnapshotObserverTest extends Specification {
 
@@ -77,20 +83,18 @@ class SnapshotObserverTest extends Specification {
         SnapshotObserver.capture([link], tmp.resolve('out'), [], [], []).keySet() as List == ['report/all.txt']
     }
 
-    def 'should fail on files outside base or nothing captured'() {
+    def 'should ignore files outside base and fail when nothing is captured'() {
         given:
-        def file = tmp.resolve('a.txt'); file.text = 'z'
+        def outside = tmp.resolve('a.txt'); outside.text = 'z'
+        def inside = tmp.resolve('out/b.txt'); Files.createDirectories(inside.parent); inside.text = 'y'
+
+        expect:
+        SnapshotObserver.capture([outside, inside], tmp.resolve('out'), [], [], []).keySet() as List == ['b.txt']
 
         when:
-        SnapshotObserver.capture([file], tmp.resolve('out'), [], [], [])
+        SnapshotObserver.capture([outside], tmp.resolve('out'), [], [], [])
         then:
         def e = thrown(AbortRunException)
-        e.message.contains('outside snapshot base dir')
-
-        when:
-        SnapshotObserver.capture([], tmp, [], [], [])
-        then:
-        e = thrown(AbortRunException)
         e.message.contains('no published files')
     }
 
@@ -101,15 +105,21 @@ class SnapshotObserverTest extends Specification {
         SnapshotObserver.diff(
             [same: '1', changed: '1', gone: '1', nameOnly: null],
             [same: '1', changed: '2', added: '1', nameOnly: '9']
-        ) == ['  unexpected: added', '  changed:    changed', '  missing:    gone']
+        ) == [added: UNEXPECTED, changed: CHANGED, gone: MISSING]
+    }
+
+    def 'should format differences as aligned lines'() {
+        expect:
+        SnapshotObserver.format([added: UNEXPECTED, changed: CHANGED, gone: MISSING]) ==
+            '  unexpected: added\n  changed:    changed\n  missing:    gone'
     }
 
     def 'should report no difference for equal snapshots'() {
         expect:
-        SnapshotObserver.diff([a: '1', b: null], [a: '1', b: null]) == []
+        SnapshotObserver.diff([a: '1', b: null], [a: '1', b: null]) == [:]
     }
 
-    // --- onFlowComplete
+    // --- verify
 
     def 'should write snapshot when file is missing'() {
         given:
@@ -117,7 +127,7 @@ class SnapshotObserverTest extends Specification {
         def snap = tmp.resolve('snap/test.json')
 
         when:
-        complete(out, [file: snap.toString()])
+        runVerify(out, [file: snap.toString()])
 
         then:
         Files.exists(snap)
@@ -136,13 +146,54 @@ class SnapshotObserverTest extends Specification {
         given:
         def out = publish('a.txt': 'hello')
         def snap = tmp.resolve('test.json')
-        complete(out, [file: snap.toString()])
+        runVerify(out, [file: snap.toString()])
 
-        when:
-        complete(out, [file: snap.toString()])
+        expect:
+        runVerify(out, [file: snap.toString()]) == null
+    }
 
-        then:
-        noExceptionThrown()
+    def 'should resolve base dir as baseDir, then outputDir, then params.outdir'() {
+        given:
+        def out = publish('a.txt': 'hello')
+        def other = tmp.resolve('other').toString()
+        def snap = tmp.resolve('test.json').toString()
+
+        expect:
+        runVerify(out, [file: snap, baseDir: null], true, [outdir: out.toString()]) == null
+        runVerify(out, [file: snap, baseDir: null], true, [outdir: other], [outputDir: out.toString()]) == null
+        runVerify(out, [file: snap], true, [outdir: other], [outputDir: other]) == null
+    }
+
+    def 'should fall back to results with omitted outdir in strict mode'() {
+        given:
+        def strict = NF.isStrictMode()
+        NextflowMeta.instance.strictMode(true)
+        SysEnv.push([NXF_FILE_ROOT: tmp.toString()])
+        def out = Files.createDirectories(tmp.resolve('results'))
+        out.resolve('a.txt').text = 'hello'
+        def snap = tmp.resolve('test.json')
+
+        expect:
+        NF.isStrictMode()
+        runVerify(out, [file: snap.toString(), baseDir: null]) == null
+        new JsonSlurper().parse(snap.toFile()) == [files: ['a.txt': '5d41402abc4b2a76b9719d911017c592']]
+        runVerify(out, [file: snap.toString(), baseDir: null], true, [:], [outputDir: out.toString()]) == null
+        runVerify(out, [file: snap.toString()]) == null
+
+        cleanup:
+        SysEnv.pop()
+        NextflowMeta.instance.strictMode(strict)
+    }
+
+    def 'should fail when no outputs are under the resolved base dir'() {
+        given:
+        def out = publish('a.txt': 'hello')
+        def snap = tmp.resolve('test.json').toString()
+
+        expect:
+        runVerify(out, [file: snap, baseDir: null], true, [outdir: out.toString()], [outputDir: tmp.resolve('other').toString()])
+            .message.contains('no published files')
+        runVerify(out, [file: snap, baseDir: null]).message.contains('no published files')
     }
 
     def 'should fail when outputs differ'() {
@@ -151,11 +202,22 @@ class SnapshotObserverTest extends Specification {
         snap.text = '{"files": {"a.txt": "0"}}'
 
         when:
-        complete(publish('a.txt': 'hello'), [file: snap.toString()])
+        def e = runVerify(publish('a.txt': 'hello'), [file: snap.toString()])
 
         then:
-        def e = thrown(AbortRunException)
+        e instanceof AbortRunException
         e.message.contains('1 difference')
+    }
+
+    def 'should warn on unexpected files unless failOnUnexpected is set'() {
+        given:
+        def out = publish('a.txt': 'hello', 'extra.txt': 'x')
+        def snap = tmp.resolve('test.json')
+        snap.text = '{"files": {"a.txt": "5d41402abc4b2a76b9719d911017c592"}}'
+
+        expect:
+        runVerify(out, [file: snap.toString()]) == null
+        runVerify(out, [file: snap.toString(), failOnUnexpected: true]).message.contains('1 difference')
     }
 
     def 'should overwrite snapshot in update mode'() {
@@ -164,7 +226,7 @@ class SnapshotObserverTest extends Specification {
         snap.text = '{"files": {"a.txt": "0"}}'
 
         when:
-        complete(publish('a.txt': 'hello'), [file: snap.toString(), update: true])
+        runVerify(publish('a.txt': 'hello'), [file: snap.toString(), update: true])
 
         then:
         new JsonSlurper().parse(snap.toFile()) == [files: ['a.txt': '5d41402abc4b2a76b9719d911017c592']]
@@ -175,7 +237,7 @@ class SnapshotObserverTest extends Specification {
         def snap = tmp.resolve('test.json')
 
         when:
-        complete(publish('a.txt': 'hello'), [file: snap.toString()], false)
+        runVerify(publish('a.txt': 'hello'), [file: snap.toString()], false)
 
         then:
         !Files.exists(snap)
@@ -183,7 +245,7 @@ class SnapshotObserverTest extends Specification {
 
     def 'should resolve relative snapshot file against project dir'() {
         when:
-        complete(publish('a.txt': 'hello'), [file: 'tests/test.json'])
+        runVerify(publish('a.txt': 'hello'), [file: 'tests/test.json'])
 
         then:
         Files.exists(tmp.resolve('project/tests/test.json'))
@@ -195,10 +257,10 @@ class SnapshotObserverTest extends Specification {
         snap.text = content
 
         when:
-        complete(publish('a.txt': 'hello'), [file: snap.toString()])
+        def e = runVerify(publish('a.txt': 'hello'), [file: snap.toString()])
 
         then:
-        def e = thrown(AbortRunException)
+        e instanceof AbortRunException
         e.message.contains(message)
 
         where:
@@ -219,15 +281,20 @@ class SnapshotObserverTest extends Specification {
         return out
     }
 
-    private void complete(Path out, Map opts, boolean success = true) {
+    /** Run the check and return the error passed to {@code session.abort}, or null. */
+    private Throwable runVerify(Path out, Map opts, boolean success = true, Map params = [:], Map config = [:]) {
+        Throwable aborted = null
         def session = Mock(Session) {
             isSuccess() >> success
             getBaseDir() >> tmp.resolve('project')
+            getConfig() >> config
+            getParams() >> new ParamsMap(params)
+            abort(_) >> { aborted = it[0] }
         }
-        def observer = new SnapshotObserver(new SnapshotConfig([enabled: true, baseDir: out.toString()] + opts, [:]))
-        observer.onFlowCreate(session)
+        def observer = new SnapshotObserver(new SnapshotConfig([enabled: true, baseDir: out.toString()] + opts, [:]), session)
         Files.walk(out).filter { Files.isRegularFile(it) }.each { observer.onFilePublish(new FilePublishEvent(null, it, null)) }
-        observer.onFlowComplete()
+        observer.verify()
+        return aborted
     }
 
     private static Path gzip(Path path, String text, long mtime) {

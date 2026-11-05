@@ -15,6 +15,7 @@ class SnapshotConfigTest extends Specification {
         !config.update
         config.file == null
         config.baseDir == null
+        !config.failOnUnexpected
         config.ignore == []
         config.nameOnly == []
         config.sizeOnly == []
@@ -22,13 +23,14 @@ class SnapshotConfigTest extends Specification {
 
     def 'should read options'() {
         when:
-        def config = new SnapshotConfig([enabled: true, file: 'a.json', baseDir: '/out', update: true, ignore: ['x'], nameOnly: ['y'], sizeOnly: ['z']], [:])
+        def config = new SnapshotConfig([enabled: true, file: 'a.json', baseDir: '/out', update: true, failOnUnexpected: true, ignore: ['x'], nameOnly: ['y'], sizeOnly: ['z']], [:])
 
         then:
         config.enabled
         config.update
         config.file == 'a.json'
         config.baseDir == '/out'
+        config.failOnUnexpected
         config.ignore == ['x']
         config.nameOnly == ['y']
         config.sizeOnly == ['z']
@@ -49,8 +51,12 @@ class SnapshotConfigTest extends Specification {
         given:
         def session = Mock(Session) { getConfig() >> [snapshot: opts] }
 
-        expect:
-        new SnapshotFactory().create(session).size() == count
+        when:
+        def observers = new SnapshotFactory().create(session)
+
+        then:
+        observers.size() == count
+        count * session.onShutdown(_)
 
         where:
         opts                               | count

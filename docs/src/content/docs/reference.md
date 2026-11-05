@@ -5,25 +5,26 @@ description: Snapshot configuration, path resolution, glob matching, and the JSO
 
 ## Configuration
 
-Declare `plugins { id 'nf-snapshot@0.2.1' }` at the top level of `nextflow.config`. Configure these seven options inside `snapshot { ... }` in a test profile.
+Declare `plugins { id 'nf-snapshot@0.2.1' }` at the top level of `nextflow.config`. Configure these eight options inside `snapshot { ... }` in a test profile.
 
-| Option     | Default     | Meaning                                                                                          |
-| ---------- | ----------- | ------------------------------------------------------------------------------------------------ |
-| `enabled`  | `false`     | Enable the check. Loading the plugin alone does nothing.                                         |
-| `file`     | None        | Required when enabled. Path to the snapshot JSON file.                                           |
-| `baseDir`  | `outputDir` | Output root used to form relative snapshot paths.                                                |
-| `update`   | `false`     | Replace the baseline instead of checking it. Use `NXF_SNAPSHOT_UPDATE=true` for the same effect. |
-| `ignore`   | `[]`        | List of relative-path glob patterns to exclude.                                                  |
-| `nameOnly` | `[]`        | List of relative-path glob patterns to compare by filename only.                                 |
-| `sizeOnly` | `[]`        | List of relative-path glob patterns to compare by file size only.                                |
+| Option             | Default                                           | Meaning                                                                                          |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `enabled`          | `false`                                           | Enable the check. Loading the plugin alone does nothing.                                         |
+| `file`             | None                                              | Required when enabled. Path to the snapshot JSON file.                                           |
+| `baseDir`          | `outputDir`, then `params.outdir`, then `results` | Output root used to form relative snapshot paths.                                                |
+| `update`           | `false`                                           | Replace the baseline instead of checking it. Use `NXF_SNAPSHOT_UPDATE=true` for the same effect. |
+| `failOnUnexpected` | `false`                                           | Fail on unexpected files instead of logging a warning.                                           |
+| `ignore`           | `[]`                                              | List of relative-path glob patterns to exclude.                                                  |
+| `nameOnly`         | `[]`                                              | List of relative-path glob patterns to compare by filename only.                                 |
+| `sizeOnly`         | `[]`                                              | List of relative-path glob patterns to compare by file size only.                                |
 
 ### Paths
 
 A relative `snapshot.file` resolves against the pipeline project directory, not the shell's working directory. You can use an absolute path to select a fixed location.
 
-The output root is `snapshot.baseDir` when set, otherwise Nextflow's `outputDir` (set with `-output-dir`, default `results`).
+The output root is the first of these that is set: `snapshot.baseDir`, Nextflow's `outputDir` (in the config or with `-output-dir`), `params.outdir`, then `results`.
 
-The plugin resolves the selected root using Nextflow's canonical path handling. Every published target must be under this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
+The plugin resolves the selected root using Nextflow's canonical path handling. It ignores published targets outside this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
 
 ### Update mode
 
@@ -43,7 +44,7 @@ Patterns use Java `PathMatcher` glob syntax against each file's relative path. T
 | `{*.html,**/*.html}` | Both root-level and nested HTML files.           |
 | `pipeline_info/**`   | Files below `pipeline_info`.                     |
 
-The plugin applies `ignore`, then `nameOnly`, then `sizeOnly`. If `ignore` excludes all captured files, the run fails with an empty-capture error. The plugin rejects output targets outside `baseDir` before applying ignore patterns.
+The plugin applies `ignore`, then `nameOnly`, then `sizeOnly`. If `ignore` excludes all captured files, the run fails with an empty-capture error. It drops targets outside the resolved output root before applying these patterns.
 
 ## Update command
 
@@ -53,7 +54,7 @@ nextflow plugin nf-snapshot:update [--profile <name>] [--outputDir <dir>]
 
 Use this command to rewrite the snapshot from existing outputs without running the pipeline. It applies `ignore`, `nameOnly` and `sizeOnly` and reads the current directory's `nextflow.config`; use `--profile` for snapshot settings inside a profile. The command ignores `-c` files, CLI params and `snapshot.enabled`. Set `snapshot.file`; relative snapshot paths resolve against the current directory.
 
-The output root is `--outputDir`, falling back to `snapshot.baseDir`, the `outputDir` config setting, then `results`. Relative roots resolve against `NXF_FILE_ROOT` when set, otherwise the current directory. The command captures each file under the root, subject to the snapshot patterns.
+The output root is `--outputDir`, falling back to `snapshot.baseDir`, the `outputDir` config setting, `params.outdir` from the config, then `results`. Relative roots resolve against `NXF_FILE_ROOT` when set, otherwise the current directory. The command captures each file under the root, subject to the snapshot patterns.
 
 ## Captured files
 
@@ -85,4 +86,4 @@ Comparison reports:
 
 A `null` on either side suppresses content comparison for that path. To restore content checking after removing a `nameOnly` pattern, regenerate the baseline.
 
-A mismatch exits with status `1`. See [Troubleshooting](../troubleshooting/) for the current shutdown and run-history caveat.
+A `missing` or `changed` result exits with status `1`. An `unexpected` result logs a warning. With `failOnUnexpected = true`, it exits with status `1`.
