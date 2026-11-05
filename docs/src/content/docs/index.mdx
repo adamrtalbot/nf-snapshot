@@ -16,7 +16,7 @@ hero:
 
 import { Card, CardGrid } from "@astrojs/starlight/components";
 
-nf-snapshot checks the files a Nextflow run publishes against a JSON snapshot committed to your pipeline repository. If a file is missing or changed, the run exits with status `1`. Unexpected files log a warning, or fail the run with `failOnUnexpected = true`.
+nf-snapshot checks the files a Nextflow run publishes against a JSON snapshot committed to your pipeline repository. If a file is missing or changed, the run exits with status `1`. Unexpected files produce a warning, or a failure if you set `failOnUnexpected = true`.
 
 ## Configure a test profile
 

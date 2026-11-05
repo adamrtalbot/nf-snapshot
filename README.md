@@ -44,7 +44,7 @@ nf-snapshot: outputs differ from /path/to/tests/snapshots/test_full.json
   unexpected: salmon/sample3/quant.sf
 ```
 
-Missing and changed files fail the run. Unexpected files, published but not in the snapshot, log a warning unless `failOnUnexpected = true`. If the snapshot file does not exist yet, the plugin writes it and does not fail. If the run itself fails, the plugin skips the check.
+Missing and changed files fail the run. The plugin warns about unexpected files (published but not in the snapshot) unless you set `failOnUnexpected = true`. If the snapshot file does not exist yet, the plugin writes it and does not fail. If the run itself fails, the plugin skips the check.
 
 To accept existing outputs without re-running, run from the project directory:
 
@@ -86,7 +86,7 @@ Each entry holds the MD5 of the file content, `size:<bytes>` for size-only files
 ## Notes
 
 - The plugin captures only the files the current run publishes, through the workflow `output` block or `publishDir`. It ignores other files in the output directory.
-- The plugin compares the snapshot with files published under `baseDir` and ignores files published elsewhere. A snapshot entry with no matching file fails the check as `missing`. If no files are published under `baseDir`, the check fails.
+- The plugin compares the snapshot with files published under `baseDir` and ignores files published elsewhere. A snapshot entry with no matching file fails the check as `missing`. If the run publishes nothing under `baseDir`, the check fails.
 - With `-resume`, `publishDir` does not overwrite files that already exist for cached tasks. Use an empty output directory, or the check will compare files left over from earlier runs.
 - Outputs must be deterministic. For example, files built from `collect()` can change order between runs, so sort them first or mark them `nameOnly`.
 - The plugin writes JSON with 2-space indentation, so Prettier leaves the file unchanged.

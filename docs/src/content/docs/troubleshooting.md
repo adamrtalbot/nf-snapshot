@@ -20,7 +20,7 @@ nf-snapshot: outputs differ from /path/to/tests/snapshots/test_full.json
 
 - **Missing:** check whether the current run published the file, whether `baseDir` changed, or whether a new ignore pattern excluded a baseline entry.
 - **Changed:** inspect the output content. Check for timestamps, random seeds, software changes, or ordering differences in aggregated results.
-- **Unexpected:** inspect newly published files and confirm that the run used the intended inputs and profile. Unexpected files log a warning unless `failOnUnexpected = true`.
+- **Unexpected:** inspect newly published files and confirm that the run used the intended inputs and profile. The plugin warns about these unless you set `failOnUnexpected = true`.
 
 For intentional changes, [update and review the baseline](../usage/#accept-an-intentional-change). Investigate unexplained failures before accepting new outputs.
 
