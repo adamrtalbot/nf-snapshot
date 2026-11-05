@@ -5,8 +5,12 @@ import java.nio.file.Path
 import java.util.zip.GZIPOutputStream
 
 import groovy.json.JsonSlurper
+import nextflow.NF
+import nextflow.NextflowMeta
 import nextflow.Session
+import nextflow.SysEnv
 import nextflow.exception.AbortRunException
+import nextflow.script.ScriptBinding.ParamsMap
 import nextflow.trace.event.FilePublishEvent
 import spock.lang.Specification
 import spock.lang.TempDir
@@ -152,6 +156,27 @@ class SnapshotObserverTest extends Specification {
         complete(out, [file: snap], true, [outdir: other], [outputDir: other]) == null
     }
 
+    def 'should fall back to results with omitted outdir in strict mode'() {
+        given:
+        def strict = NF.isStrictMode()
+        NextflowMeta.instance.strictMode(true)
+        SysEnv.push([NXF_FILE_ROOT: tmp.toString()])
+        def out = Files.createDirectories(tmp.resolve('results'))
+        out.resolve('a.txt').text = 'hello'
+        def snap = tmp.resolve('test.json')
+
+        expect:
+        NF.isStrictMode()
+        complete(out, [file: snap.toString(), baseDir: null]) == null
+        new JsonSlurper().parse(snap.toFile()) == [files: ['a.txt': '5d41402abc4b2a76b9719d911017c592']]
+        complete(out, [file: snap.toString(), baseDir: null], true, [:], [outputDir: out.toString()]) == null
+        complete(out, [file: snap.toString()]) == null
+
+        cleanup:
+        SysEnv.pop()
+        NextflowMeta.instance.strictMode(strict)
+    }
+
     def 'should fail when no outputs are under the resolved base dir'() {
         given:
         def out = publish('a.txt': 'hello')
@@ -255,7 +280,7 @@ class SnapshotObserverTest extends Specification {
             isSuccess() >> success
             getBaseDir() >> tmp.resolve('project')
             getConfig() >> config
-            getParams() >> params
+            getParams() >> new ParamsMap(params)
             abort(_) >> { aborted = it[0] }
         }
         def observer = new SnapshotObserver(new SnapshotConfig([enabled: true, baseDir: out.toString()] + opts, [:]), session)

@@ -44,7 +44,7 @@ Patterns use Java `PathMatcher` glob syntax against each file's relative path. T
 | `{*.html,**/*.html}` | Both root-level and nested HTML files.           |
 | `pipeline_info/**`   | Files below `pipeline_info`.                     |
 
-The plugin applies `ignore`, then `nameOnly`, then `sizeOnly`. If `ignore` excludes all captured files, the run fails with an empty-capture error. It drops targets outside `baseDir` before applying these patterns.
+The plugin applies `ignore`, then `nameOnly`, then `sizeOnly`. If `ignore` excludes all captured files, the run fails with an empty-capture error. It drops targets outside the resolved output root before applying these patterns.
 
 ## Update command
 

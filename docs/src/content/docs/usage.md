@@ -45,7 +45,7 @@ profiles {
 }
 ```
 
-Patterns apply to paths relative to `snapshot.baseDir`. Ignored files have no baseline entry. Regenerate the snapshot after changing these patterns so old entries do not appear as missing.
+Patterns apply to paths relative to the [resolved output root](#choose-the-output-root). Ignored files have no baseline entry. Regenerate the snapshot after changing these patterns so old entries do not appear as missing.
 
 ## Check filenames without contents
 

@@ -18,7 +18,7 @@ nf-snapshot: outputs differ from /path/to/tests/snapshots/test_full.json
   unexpected: salmon/sample3/quant.sf
 ```
 
-- **Missing:** check whether the current run published the file, whether `baseDir` changed, or whether a new ignore pattern excluded a baseline entry.
+- **Missing:** check whether the current run published the file, whether the resolved output root changed, or whether a new ignore pattern excluded a baseline entry.
 - **Changed:** inspect the output content. Check for timestamps, random seeds, software changes, or ordering differences in aggregated results.
 - **Unexpected:** inspect newly published files and confirm that the run used the intended inputs and profile. The plugin warns about these unless you set `failOnUnexpected = true`.
 

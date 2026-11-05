@@ -86,7 +86,7 @@ Each entry holds the MD5 of the file content, `size:<bytes>` for size-only files
 ## Notes
 
 - The plugin captures only the files the current run publishes, through the workflow `output` block or `publishDir`. It ignores other files in the output directory.
-- The plugin compares the snapshot with files published under `baseDir` and ignores files published elsewhere. A snapshot entry with no matching file fails the check as `missing`. If the run publishes nothing under `baseDir`, the check fails.
+- The plugin compares the snapshot with files published under the resolved output root and ignores files published elsewhere. The root is `snapshot.baseDir`, then `outputDir`, then `params.outdir`, then `results`. A snapshot entry with no matching file fails the check as `missing`. If the run publishes nothing under the root, the check fails.
 - With `-resume`, `publishDir` does not overwrite files that already exist for cached tasks. Use an empty output directory, or the check will compare files left over from earlier runs.
 - Outputs must be deterministic. For example, files built from `collect()` can change order between runs, so sort them first or mark them `nameOnly`.
 - The plugin writes JSON with 2-space indentation, so Prettier leaves the file unchanged.

@@ -69,7 +69,7 @@ class SnapshotObserver implements TraceObserverV2 {
         }
         final file = snapshotFile()
         // Same order as the update command; 'results' resolves as Session.outputDir does
-        final base = FileHelper.toCanonicalPath(config.baseDir ?: session.config.get('outputDir') ?: session.params.get('outdir') ?: 'results')
+        final base = FileHelper.toCanonicalPath(config.baseDir ?: session.config.get('outputDir') ?: (session.params.containsKey('outdir') ? session.params.get('outdir') : null) ?: 'results')
         // ponytail: hashes serially, parallelise if full-size runs are slow
         final actual = capture(published, base, config.ignore, config.nameOnly, config.sizeOnly)
 
