@@ -17,6 +17,10 @@ class SnapshotFactory implements TraceObserverFactoryV2 {
             return []
         if( !config.file )
             throw new AbortOperationException("nf-snapshot: `snapshot.file` must be set when `snapshot.enabled = true`")
-        return List.<TraceObserverV2>of(new SnapshotObserver(config))
+        final observer = new SnapshotObserver(config, session)
+        // Nextflow creates observers just before WorkflowMetadata, whose shutdown hook sets `workflow.success`.
+        // Shutdown hooks run in order, so this check runs first and a mismatch fails the run on Seqera Platform too.
+        session.onShutdown { observer.verify() }
+        return List.<TraceObserverV2>of(observer)
     }
 }

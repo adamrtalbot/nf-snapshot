@@ -60,7 +60,7 @@ Use a directory containing only that run's outputs: the command captures every f
 | ---------- | ----------- | -------------------------------------------------------------------------------------- |
 | `enabled`  | `false`     | Enable the check.                                                                      |
 | `file`     |             | Snapshot JSON file. Relative paths resolve against the project directory.              |
-| `baseDir`  | `outputDir` | Directory that snapshot paths are relative to.                                         |
+| `baseDir`  | `outputDir` | Directory that snapshot paths are relative to. Falls back to `params.outdir`.          |
 | `update`   | `false`     | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same.  |
 | `ignore`   | `[]`        | Glob patterns of relative paths to leave out of the snapshot.                          |
 | `nameOnly` | `[]`        | Glob patterns of relative paths to check by filename, without a content hash.          |

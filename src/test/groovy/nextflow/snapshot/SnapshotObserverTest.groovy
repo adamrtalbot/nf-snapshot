@@ -109,7 +109,7 @@ class SnapshotObserverTest extends Specification {
         SnapshotObserver.diff([a: '1', b: null], [a: '1', b: null]) == []
     }
 
-    // --- onFlowComplete
+    // --- verify
 
     def 'should write snapshot when file is missing'() {
         given:
@@ -138,11 +138,29 @@ class SnapshotObserverTest extends Specification {
         def snap = tmp.resolve('test.json')
         complete(out, [file: snap.toString()])
 
+        expect:
+        complete(out, [file: snap.toString()]) == null
+    }
+
+    def 'should default base dir to params.outdir when outputs are outside outputDir'() {
+        given:
+        def out = publish('a.txt': 'hello')
+        def snap = tmp.resolve('test.json')
+
         when:
-        complete(out, [file: snap.toString()])
+        def e = complete(out, [file: snap.toString(), baseDir: null], true, [outdir: out.toString()])
 
         then:
-        noExceptionThrown()
+        e == null
+        new JsonSlurper().parse(snap.toFile()) == [files: ['a.txt': '5d41402abc4b2a76b9719d911017c592']]
+    }
+
+    def 'should fail when outputs are outside outputDir and params.outdir'() {
+        when:
+        def e = complete(publish('a.txt': 'hello'), [file: tmp.resolve('test.json').toString(), baseDir: null], true, [outdir: tmp.resolve('other').toString()])
+
+        then:
+        e.message.contains('outside snapshot base dir')
     }
 
     def 'should fail when outputs differ'() {
@@ -151,10 +169,10 @@ class SnapshotObserverTest extends Specification {
         snap.text = '{"files": {"a.txt": "0"}}'
 
         when:
-        complete(publish('a.txt': 'hello'), [file: snap.toString()])
+        def e = complete(publish('a.txt': 'hello'), [file: snap.toString()])
 
         then:
-        def e = thrown(AbortRunException)
+        e instanceof AbortRunException
         e.message.contains('1 difference')
     }
 
@@ -195,10 +213,10 @@ class SnapshotObserverTest extends Specification {
         snap.text = content
 
         when:
-        complete(publish('a.txt': 'hello'), [file: snap.toString()])
+        def e = complete(publish('a.txt': 'hello'), [file: snap.toString()])
 
         then:
-        def e = thrown(AbortRunException)
+        e instanceof AbortRunException
         e.message.contains(message)
 
         where:
@@ -219,15 +237,20 @@ class SnapshotObserverTest extends Specification {
         return out
     }
 
-    private void complete(Path out, Map opts, boolean success = true) {
+    /** Run the check and return the error passed to {@code session.abort}, or null. */
+    private Throwable complete(Path out, Map opts, boolean success = true, Map params = [:]) {
+        Throwable aborted = null
         def session = Mock(Session) {
             isSuccess() >> success
             getBaseDir() >> tmp.resolve('project')
+            getOutputDir() >> tmp.resolve('results')
+            getParams() >> params
+            abort(_) >> { aborted = it[0] }
         }
-        def observer = new SnapshotObserver(new SnapshotConfig([enabled: true, baseDir: out.toString()] + opts, [:]))
-        observer.onFlowCreate(session)
+        def observer = new SnapshotObserver(new SnapshotConfig([enabled: true, baseDir: out.toString()] + opts, [:]), session)
         Files.walk(out).filter { Files.isRegularFile(it) }.each { observer.onFilePublish(new FilePublishEvent(null, it, null)) }
-        observer.onFlowComplete()
+        observer.verify()
+        return aborted
     }
 
     private static Path gzip(Path path, String text, long mtime) {

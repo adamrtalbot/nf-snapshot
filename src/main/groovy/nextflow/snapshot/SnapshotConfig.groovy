@@ -27,7 +27,7 @@ class SnapshotConfig implements ConfigScope {
 
     @ConfigOption
     @Description("""
-        Directory that snapshot paths are relative to (default: `outputDir`).
+        Directory that snapshot paths are relative to (default: `outputDir`, or `params.outdir` when it holds every published file and `outputDir` does not).
     """)
     final String baseDir
 

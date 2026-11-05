@@ -78,7 +78,7 @@ class SnapshotPlugin extends BasePlugin implements PluginExecAware {
             throw new AbortOperationException("nf-snapshot: `snapshot.file` is not set${profile ? " in profile `${profile}`" : ''} - ${USAGE}")
         final file = resolve(opts.file)
         // Resolve paths as Session.outputDir and the observer do, so NXF_FILE_ROOT applies
-        final base = FileHelper.toCanonicalPath(outputDir ?: opts.baseDir ?: config.outputDir ?: 'results')
+        final base = FileHelper.toCanonicalPath(outputDir ?: opts.baseDir ?: config.outputDir ?: (config.params as Map)?.outdir ?: 'results')
         SnapshotObserver.write(file, SnapshotObserver.capture([base], base, opts.ignore, opts.nameOnly, opts.sizeOnly))
         return 0
     }

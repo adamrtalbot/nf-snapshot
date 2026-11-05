@@ -29,15 +29,11 @@ import nextflow.trace.event.FilePublishEvent
 class SnapshotObserver implements TraceObserverV2 {
 
     private final SnapshotConfig config
+    private final Session session
     private final Set<Path> published = ConcurrentHashMap.newKeySet()
-    private Session session
 
-    SnapshotObserver(SnapshotConfig config) {
+    SnapshotObserver(SnapshotConfig config, Session session) {
         this.config = config
-    }
-
-    @Override
-    void onFlowCreate(Session session) {
         this.session = session
     }
 
@@ -47,17 +43,22 @@ class SnapshotObserver implements TraceObserverV2 {
         published.add(event.target.toAbsolutePath().normalize())
     }
 
-    @Override
-    void onFlowComplete() {
-        // Wrap failures in AbortRunException; Nextflow swallows other observer exceptions.
+    /**
+     * Run as a session shutdown hook (see {@link SnapshotFactory}): publishing has finished but
+     * `workflow.success`, which onComplete handlers and Seqera Platform read, is not yet set.
+     * Nextflow swallows exceptions from shutdown hooks, so mark the run failed with {@code session.abort}.
+     */
+    void verify() {
         try {
             check()
         }
         catch( AbortRunException e ) {
-            throw e
+            session.abort(e)
         }
         catch( Exception e ) {
-            fail("nf-snapshot: check failed - ${e.message ?: e.class.name}")
+            final message = "nf-snapshot: check failed - ${e.message ?: e.class.name}".toString()
+            log.error message
+            session.abort(new AbortRunException(message))
         }
     }
 
@@ -67,7 +68,7 @@ class SnapshotObserver implements TraceObserverV2 {
             return
         }
         final file = snapshotFile()
-        final base = FileHelper.toCanonicalPath(config.baseDir ?: session.outputDir)
+        final base = baseDir()
         // ponytail: hashes serially, parallelise if full-size runs are slow
         final actual = capture(published, base, config.ignore, config.nameOnly, config.sizeOnly)
 
@@ -86,6 +87,18 @@ class SnapshotObserver implements TraceObserverV2 {
         }
         log.error "nf-snapshot: outputs differ from ${file}\n${problems.join('\n')}\nRe-run with NXF_SNAPSHOT_UPDATE=true to accept the changes"
         throw new AbortRunException("nf-snapshot: ${problems.size()} difference(s) from snapshot")
+    }
+
+    /** {@code snapshot.baseDir}, else {@code outputDir}, else {@code params.outdir} when it holds every published file. */
+    private Path baseDir() {
+        if( config.baseDir )
+            return FileHelper.toCanonicalPath(config.baseDir)
+        final outputDir = FileHelper.toCanonicalPath(session.outputDir)
+        final outdir = session.params.get('outdir')
+        if( !outdir || published.every { Path it -> it.startsWith(outputDir) } )
+            return outputDir
+        final paramsDir = FileHelper.toCanonicalPath(outdir)
+        return published.every { Path it -> it.startsWith(paramsDir) } ? paramsDir : outputDir
     }
 
     private Path snapshotFile() {

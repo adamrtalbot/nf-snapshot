@@ -21,7 +21,7 @@ Declare `plugins { id 'nf-snapshot@0.2.1' }` at the top level of `nextflow.confi
 
 A relative `snapshot.file` resolves against the pipeline project directory, not the shell's working directory. You can use an absolute path to select a fixed location.
 
-The output root is `snapshot.baseDir` when set, otherwise Nextflow's `outputDir` (set with `-output-dir`, default `results`).
+The output root is `snapshot.baseDir` when set, otherwise Nextflow's `outputDir` (set with `-output-dir`, default `results`). If the run published files outside `outputDir` and `params.outdir` contains all of them, the root is `params.outdir`.
 
 The plugin resolves the selected root using Nextflow's canonical path handling. Every published target must be under this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
 
@@ -53,7 +53,7 @@ nextflow plugin nf-snapshot:update [--profile <name>] [--outputDir <dir>]
 
 Use this command to rewrite the snapshot from existing outputs without running the pipeline. It applies `ignore`, `nameOnly` and `sizeOnly` and reads the current directory's `nextflow.config`; use `--profile` for snapshot settings inside a profile. The command ignores `-c` files, CLI params and `snapshot.enabled`. Set `snapshot.file`; relative snapshot paths resolve against the current directory.
 
-The output root is `--outputDir`, falling back to `snapshot.baseDir`, the `outputDir` config setting, then `results`. Relative roots resolve against `NXF_FILE_ROOT` when set, otherwise the current directory. The command captures each file under the root, subject to the snapshot patterns.
+The output root is `--outputDir`, falling back to `snapshot.baseDir`, the `outputDir` config setting, `params.outdir` from the config, then `results`. Relative roots resolve against `NXF_FILE_ROOT` when set, otherwise the current directory. The command captures each file under the root, subject to the snapshot patterns.
 
 ## Captured files
 

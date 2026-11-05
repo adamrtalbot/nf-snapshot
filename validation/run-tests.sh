@@ -93,6 +93,8 @@ fi
 cp "$TMP/committed.json" snapshot.json
 fi
 check "content changed"           1 "changed:    say/alice.txt"     -profile snap --greeting hi
+# workflow.success is what onComplete handlers and Seqera Platform report
+check "mismatch sets workflow.success" 1 "workflow.success=false"  -profile snap --greeting hi -c "$(config 'workflow.onComplete = { println "workflow.success=${workflow.success}" }')"
 check "file missing"              1 "missing:    say/carol.txt"     -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
 check "file unexpected"           1 "unexpected: say/bob.txt"       -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
 check "broken snapshot fails"     1 "check failed"                  -profile snap -c "$(config "snapshot.file = '$TMP/broken.json'")"
