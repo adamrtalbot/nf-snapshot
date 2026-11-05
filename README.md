@@ -44,7 +44,7 @@ nf-snapshot: outputs differ from /path/to/tests/snapshots/test_full.json
   unexpected: salmon/sample3/quant.sf
 ```
 
-If the snapshot file does not exist yet, the plugin writes it and does not fail. If the run itself fails, the plugin skips the check.
+Missing and changed files fail the run. Unexpected files, published but not in the snapshot, log a warning unless `failOnUnexpected = true`. If the snapshot file does not exist yet, the plugin writes it and does not fail. If the run itself fails, the plugin skips the check.
 
 To accept existing outputs without re-running, run from the project directory:
 
@@ -56,15 +56,16 @@ Use a directory containing only that run's outputs: the command captures every f
 
 ## Options
 
-| Option     | Default                                           | Description                                                                            |
-| ---------- | ------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `enabled`  | `false`                                           | Enable the check.                                                                      |
-| `file`     |                                                   | Snapshot JSON file. Relative paths resolve against the project directory.              |
-| `baseDir`  | `outputDir`, then `params.outdir`, then `results` | Directory that snapshot paths are relative to.                                         |
-| `update`   | `false`                                           | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same.  |
-| `ignore`   | `[]`                                              | Glob patterns of relative paths to leave out of the snapshot.                          |
-| `nameOnly` | `[]`                                              | Glob patterns of relative paths to check by filename, without a content hash.          |
-| `sizeOnly` | `[]`                                              | Glob patterns of relative paths to check by file size, without reading their contents. |
+| Option             | Default                                           | Description                                                                            |
+| ------------------ | ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `enabled`          | `false`                                           | Enable the check.                                                                      |
+| `file`             |                                                   | Snapshot JSON file. Relative paths resolve against the project directory.              |
+| `baseDir`          | `outputDir`, then `params.outdir`, then `results` | Directory that snapshot paths are relative to.                                         |
+| `update`           | `false`                                           | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same.  |
+| `failOnUnexpected` | `false`                                           | Fail on published files that are not in the snapshot, instead of logging a warning.    |
+| `ignore`           | `[]`                                              | Glob patterns of relative paths to leave out of the snapshot.                          |
+| `nameOnly`         | `[]`                                              | Glob patterns of relative paths to check by filename, without a content hash.          |
+| `sizeOnly`         | `[]`                                              | Glob patterns of relative paths to check by file size, without reading their contents. |
 
 Globs use Java `PathMatcher` syntax, so `**/*.html` does not match `report.html` at the top level. Use `{*.html,**/*.html}` to match both.
 

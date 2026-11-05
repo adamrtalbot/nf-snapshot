@@ -176,6 +176,17 @@ class SnapshotObserverTest extends Specification {
         e.message.contains('1 difference')
     }
 
+    def 'should warn on unexpected files unless failOnUnexpected is set'() {
+        given:
+        def out = publish('a.txt': 'hello', 'extra.txt': 'x')
+        def snap = tmp.resolve('test.json')
+        snap.text = '{"files": {"a.txt": "5d41402abc4b2a76b9719d911017c592"}}'
+
+        expect:
+        complete(out, [file: snap.toString()]) == null
+        complete(out, [file: snap.toString(), failOnUnexpected: true]).message.contains('1 difference')
+    }
+
     def 'should overwrite snapshot in update mode'() {
         given:
         def snap = tmp.resolve('test.json')

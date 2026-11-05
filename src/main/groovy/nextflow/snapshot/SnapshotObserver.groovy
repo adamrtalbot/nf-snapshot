@@ -82,12 +82,15 @@ class SnapshotObserver implements TraceObserverV2 {
         if( expected == null )
             fail("nf-snapshot: ${file} has no `files` key")
         final problems = diff(expected, actual)
-        if( !problems ) {
-            log.info "nf-snapshot: ${actual.size()} files match ${file}"
+        final failures = config.failOnUnexpected ? problems : problems.findAll { String it -> !it.startsWith('  unexpected:') }
+        if( !failures ) {
+            if( problems )
+                log.warn "nf-snapshot: files not in ${file}\n${problems.join('\n')}\nSet `snapshot.failOnUnexpected = true` to fail on these"
+            log.info "nf-snapshot: ${expected.size()} files match ${file}"
             return
         }
         log.error "nf-snapshot: outputs differ from ${file}\n${problems.join('\n')}\nRe-run with NXF_SNAPSHOT_UPDATE=true to accept the changes"
-        throw new AbortRunException("nf-snapshot: ${problems.size()} difference(s) from snapshot")
+        throw new AbortRunException("nf-snapshot: ${failures.size()} difference(s) from snapshot")
     }
 
     private Path snapshotFile() {

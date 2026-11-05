@@ -34,6 +34,7 @@ config() {
 }
 
 sed 's#say/bob.txt#say/carol.txt#' snapshot.json > "$TMP/renamed.json"
+grep -v 'gz/bob.txt.gz' snapshot.json > "$TMP/extra.json"
 echo '{' > "$TMP/broken.json"
 
 check "outputs match"             0 "6 files match"                 -profile snap
@@ -96,7 +97,8 @@ check "content changed"           1 "changed:    say/alice.txt"     -profile sna
 # workflow.success is what onComplete handlers and Seqera Platform report
 check "mismatch sets workflow.success" 1 "workflow.success=false"  -profile snap --greeting hi -c "$(config 'workflow.onComplete = { println "workflow.success=${workflow.success}" }')"
 check "file missing"              1 "missing:    say/carol.txt"     -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
-check "file unexpected"           1 "unexpected: say/bob.txt"       -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
+check "unexpected file warns"      0 "unexpected: gz/bob.txt.gz"     -profile snap -c "$(config "snapshot.file = '$TMP/extra.json'")"
+check "failOnUnexpected fails"    1 "unexpected: gz/bob.txt.gz"     -profile snap -c "$(config "snapshot { file = '$TMP/extra.json'; failOnUnexpected = true }")"
 check "broken snapshot fails"     1 "check failed"                  -profile snap -c "$(config "snapshot.file = '$TMP/broken.json'")"
 check "outputs outside base dir"  1 "no published files found"      -profile snap -c "$(config "snapshot.baseDir = '$TMP/elsewhere'")"
 check "file option required"      1 "snapshot.file"                 -profile snap -c "$(config "snapshot.file = null")"

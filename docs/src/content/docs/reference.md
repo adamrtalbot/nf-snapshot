@@ -5,17 +5,18 @@ description: Snapshot configuration, path resolution, glob matching, and the JSO
 
 ## Configuration
 
-Declare `plugins { id 'nf-snapshot@0.2.1' }` at the top level of `nextflow.config`. Configure these seven options inside `snapshot { ... }` in a test profile.
+Declare `plugins { id 'nf-snapshot@0.2.1' }` at the top level of `nextflow.config`. Configure these eight options inside `snapshot { ... }` in a test profile.
 
-| Option     | Default     | Meaning                                                                                          |
-| ---------- | ----------- | ------------------------------------------------------------------------------------------------ |
-| `enabled`  | `false`     | Enable the check. Loading the plugin alone does nothing.                                         |
-| `file`     | None        | Required when enabled. Path to the snapshot JSON file.                                           |
-| `baseDir`  | `outputDir` | Output root used to form relative snapshot paths.                                                |
-| `update`   | `false`     | Replace the baseline instead of checking it. Use `NXF_SNAPSHOT_UPDATE=true` for the same effect. |
-| `ignore`   | `[]`        | List of relative-path glob patterns to exclude.                                                  |
-| `nameOnly` | `[]`        | List of relative-path glob patterns to compare by filename only.                                 |
-| `sizeOnly` | `[]`        | List of relative-path glob patterns to compare by file size only.                                |
+| Option             | Default                                           | Meaning                                                                                          |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `enabled`          | `false`                                           | Enable the check. Loading the plugin alone does nothing.                                         |
+| `file`             | None                                              | Required when enabled. Path to the snapshot JSON file.                                           |
+| `baseDir`          | `outputDir`, then `params.outdir`, then `results` | Output root used to form relative snapshot paths.                                                |
+| `update`           | `false`                                           | Replace the baseline instead of checking it. Use `NXF_SNAPSHOT_UPDATE=true` for the same effect. |
+| `failOnUnexpected` | `false`                                           | Fail on unexpected files instead of logging a warning.                                           |
+| `ignore`           | `[]`                                              | List of relative-path glob patterns to exclude.                                                  |
+| `nameOnly`         | `[]`                                              | List of relative-path glob patterns to compare by filename only.                                 |
+| `sizeOnly`         | `[]`                                              | List of relative-path glob patterns to compare by file size only.                                |
 
 ### Paths
 
@@ -85,4 +86,4 @@ Comparison reports:
 
 A `null` on either side suppresses content comparison for that path. To restore content checking after removing a `nameOnly` pattern, regenerate the baseline.
 
-A mismatch exits with status `1`. See [Troubleshooting](../troubleshooting/) for the current shutdown and run-history caveat.
+A `missing` or `changed` result exits with status `1`. An `unexpected` result logs a warning, or exits with status `1` when `failOnUnexpected = true`.

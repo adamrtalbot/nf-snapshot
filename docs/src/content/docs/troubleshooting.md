@@ -20,7 +20,7 @@ nf-snapshot: outputs differ from /path/to/tests/snapshots/test_full.json
 
 - **Missing:** check whether the current run published the file, whether `baseDir` changed, or whether a new ignore pattern excluded a baseline entry.
 - **Changed:** inspect the output content. Check for timestamps, random seeds, software changes, or ordering differences in aggregated results.
-- **Unexpected:** inspect newly published files and confirm that the run used the intended inputs and profile.
+- **Unexpected:** inspect newly published files and confirm that the run used the intended inputs and profile. Unexpected files log a warning unless `failOnUnexpected = true`.
 
 For intentional changes, [update and review the baseline](../usage/#accept-an-intentional-change). Investigate unexplained failures before accepting new outputs.
 
@@ -57,7 +57,3 @@ An existing `null` baseline entry continues to mean name-only checking even afte
 ## A resumed run checks stale output
 
 With `-resume`, `publishDir` does not overwrite existing published files for cached tasks. Use an empty output directory when resuming so nf-snapshot can inspect the files published for the current run.
-
-## The exit status and run history disagree
-
-A snapshot mismatch exits with status `1`, but the failure occurs during observer completion. It skips part of Nextflow's shutdown, and Nextflow run history records the run as successful. Use the command's exit status and nf-snapshot messages to assess the check. `-resume` still reuses cached tasks.
