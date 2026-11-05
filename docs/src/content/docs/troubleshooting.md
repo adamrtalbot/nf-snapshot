@@ -34,17 +34,13 @@ For unavoidable variation, use `nameOnly` to keep an existence check or `ignore`
 
 If the snapshot is missing, the plugin creates it and passes the check. Commit the baseline before using a run to check for regressions. In CI, add an explicit file-existence check as shown in [Usage](../usage/#run-in-ci).
 
-## An output is outside the base directory
-
-```text
-nf-snapshot: 1 published file(s) outside snapshot base dir ...
-```
-
-Set `snapshot.baseDir` to a common parent of all published targets. Without it, the root is `outputDir` if set, then `params.outdir`, then `results`. Ignore patterns do not exempt targets from this check.
-
 ## No published files were found
 
-The plugin fails if it captures no files, including when `ignore` excludes everything. Confirm that the run publishes regular files, that the selected profile executes the expected workflow, and that your ignore patterns leave something to check.
+```text
+nf-snapshot: no published files found under ...
+```
+
+The plugin fails if it captures no files under the output root, including when `ignore` excludes everything. It ignores files published outside the root. If your outputs are elsewhere, set `snapshot.baseDir`. Without it, the root is `outputDir` if set, then `params.outdir`, then `results`. Confirm that the run publishes regular files, that the selected profile executes the expected workflow, and that your ignore patterns leave something to check.
 
 Only publication events from the current run count. Existing files in an output directory do not create a snapshot by themselves.
 

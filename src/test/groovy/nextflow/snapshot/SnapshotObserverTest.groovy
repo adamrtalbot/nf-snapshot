@@ -77,20 +77,18 @@ class SnapshotObserverTest extends Specification {
         SnapshotObserver.capture([link], tmp.resolve('out'), [], [], []).keySet() as List == ['report/all.txt']
     }
 
-    def 'should fail on files outside base or nothing captured'() {
+    def 'should ignore files outside base and fail when nothing is captured'() {
         given:
-        def file = tmp.resolve('a.txt'); file.text = 'z'
+        def outside = tmp.resolve('a.txt'); outside.text = 'z'
+        def inside = tmp.resolve('out/b.txt'); Files.createDirectories(inside.parent); inside.text = 'y'
+
+        expect:
+        SnapshotObserver.capture([outside, inside], tmp.resolve('out'), [], [], []).keySet() as List == ['b.txt']
 
         when:
-        SnapshotObserver.capture([file], tmp.resolve('out'), [], [], [])
+        SnapshotObserver.capture([outside], tmp.resolve('out'), [], [], [])
         then:
         def e = thrown(AbortRunException)
-        e.message.contains('outside snapshot base dir')
-
-        when:
-        SnapshotObserver.capture([], tmp, [], [], [])
-        then:
-        e = thrown(AbortRunException)
         e.message.contains('no published files')
     }
 
@@ -154,15 +152,15 @@ class SnapshotObserverTest extends Specification {
         complete(out, [file: snap], true, [outdir: other], [outputDir: other]) == null
     }
 
-    def 'should fail when outputs are not under the resolved base dir'() {
+    def 'should fail when no outputs are under the resolved base dir'() {
         given:
         def out = publish('a.txt': 'hello')
         def snap = tmp.resolve('test.json').toString()
 
         expect:
         complete(out, [file: snap, baseDir: null], true, [outdir: out.toString()], [outputDir: tmp.resolve('other').toString()])
-            .message.contains('outside snapshot base dir')
-        complete(out, [file: snap, baseDir: null]).message.contains('outside snapshot base dir')
+            .message.contains('no published files')
+        complete(out, [file: snap, baseDir: null]).message.contains('no published files')
     }
 
     def 'should fail when outputs differ'() {

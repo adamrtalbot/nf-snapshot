@@ -98,7 +98,7 @@ check "mismatch sets workflow.success" 1 "workflow.success=false"  -profile snap
 check "file missing"              1 "missing:    say/carol.txt"     -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
 check "file unexpected"           1 "unexpected: say/bob.txt"       -profile snap -c "$(config "snapshot.file = '$TMP/renamed.json'")"
 check "broken snapshot fails"     1 "check failed"                  -profile snap -c "$(config "snapshot.file = '$TMP/broken.json'")"
-check "output outside base dir"   1 "outside snapshot base dir"     -profile snap -c "$(config "snapshot.baseDir = '$TMP/elsewhere'")"
+check "outputs outside base dir"  1 "no published files found"      -profile snap -c "$(config "snapshot.baseDir = '$TMP/elsewhere'")"
 check "file option required"      1 "snapshot.file"                 -profile snap -c "$(config "snapshot.file = null")"
 check "disabled by default"       0 ""
 if grep -q "nf-snapshot:" "$TMP/out.log"; then

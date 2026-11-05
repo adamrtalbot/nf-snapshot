@@ -4,6 +4,7 @@
 
 - Fix runs reporting success on Seqera Platform, and in `workflow.success`, when the snapshot check fails.
 - Resolve the output root in this order: `snapshot.baseDir`, `outputDir`, `params.outdir`, then `results`. The update command uses the same order after `--outputDir`.
+- Ignore files published outside the output root instead of failing. Snapshot entries with no matching file under the root still fail as `missing`.
 
 ## [0.2.1]
 

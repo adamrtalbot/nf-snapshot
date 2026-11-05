@@ -100,15 +100,12 @@ class SnapshotObserver implements TraceObserverV2 {
      * or null for name-only files. Expand published directories into their files.
      */
     static Map<String,String> capture(Collection<Path> targets, Path base, List<String> ignore, List<String> nameOnly, List<String> sizeOnly) {
-        final outside = targets.findAll { Path it -> !it.startsWith(base) }
-        if( outside )
-            fail("nf-snapshot: ${outside.size()} published file(s) outside snapshot base dir ${base}, e.g. ${outside.take(3).join(', ')}. Set `snapshot.baseDir`")
-
         final ignoreMatchers = matchers(ignore)
         final nameOnlyMatchers = matchers(nameOnly)
         final sizeOnlyMatchers = matchers(sizeOnly)
         final result = new TreeMap<String,String>()
-        for( Path target : targets ) {
+        // Outputs outside the base dir are not part of the snapshot
+        for( Path target : targets.findAll { Path it -> it.startsWith(base) } ) {
             Files.walk(target, FileVisitOption.FOLLOW_LINKS).withCloseable { stream ->
                 stream.filter { Path it -> Files.isRegularFile(it) }.forEach { Path it ->
                     final rel = base.relativize(it).toString()
@@ -124,7 +121,7 @@ class SnapshotObserver implements TraceObserverV2 {
             }
         }
         if( !result )
-            fail("nf-snapshot: no published files found under ${base}")
+            fail("nf-snapshot: no published files found under ${base}. Set `snapshot.baseDir` if outputs are elsewhere")
         return result
     }
 

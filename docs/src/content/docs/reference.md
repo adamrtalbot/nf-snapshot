@@ -23,7 +23,7 @@ A relative `snapshot.file` resolves against the pipeline project directory, not 
 
 The output root is the first of these that is set: `snapshot.baseDir`, Nextflow's `outputDir` (in the config or with `-output-dir`), `params.outdir`, then `results`.
 
-The plugin resolves the selected root using Nextflow's canonical path handling. Every published target must be under this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
+The plugin resolves the selected root using Nextflow's canonical path handling. The plugin ignores published targets outside this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
 
 ### Update mode
 
@@ -43,7 +43,7 @@ Patterns use Java `PathMatcher` glob syntax against each file's relative path. T
 | `{*.html,**/*.html}` | Both root-level and nested HTML files.           |
 | `pipeline_info/**`   | Files below `pipeline_info`.                     |
 
-The plugin applies `ignore`, then `nameOnly`, then `sizeOnly`. If `ignore` excludes all captured files, the run fails with an empty-capture error. The plugin rejects output targets outside `baseDir` before applying ignore patterns.
+The plugin applies `ignore`, then `nameOnly`, then `sizeOnly`. If `ignore` excludes all captured files, the run fails with an empty-capture error. Targets outside `baseDir` are ignored before these patterns apply.
 
 ## Update command
 

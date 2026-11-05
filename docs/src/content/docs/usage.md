@@ -93,7 +93,7 @@ snapshot {
 }
 ```
 
-All published targets must be under that directory, including targets matched by `ignore`. Files elsewhere cause a failure. See [path resolution](../reference/#paths) for details.
+The plugin ignores files published outside that directory. Snapshot entries that do not appear under it fail the check as `missing`. See [path resolution](../reference/#paths) for details.
 
 ## Run in CI
 
