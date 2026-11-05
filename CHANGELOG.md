@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0]
+
 - Fix failed snapshot checks reporting success on Seqera Platform, in `workflow.success` and in `nextflow log`.
 - Resolve the output root in this order: `snapshot.baseDir`, `outputDir`, `params.outdir`, then `results`. The update command uses the same order after `--outputDir`.
 - Log unexpected files as a warning instead of failing the run. Set `snapshot.failOnUnexpected = true` to keep failing on them.
