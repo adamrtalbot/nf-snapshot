@@ -91,7 +91,6 @@ Each entry holds the MD5 of the file content, `size:<bytes>` for size-only files
 - Outputs must be deterministic. For example, files built from `collect()` can change order between runs, so sort them first or mark them `nameOnly`.
 - The plugin writes JSON with 2-space indentation, so Prettier leaves the file unchanged.
 - The plugin downloads remote outputs (for example `s3://`) to hash them. Mark large remote files `sizeOnly` to check their size from metadata instead.
-- A failed check skips part of Nextflow's shutdown, and the run history records the run as successful. `-resume` still reuses cached tasks.
 
 ## Development
 
