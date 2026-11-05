@@ -21,7 +21,7 @@ Declare `plugins { id 'nf-snapshot@0.2.1' }` at the top level of `nextflow.confi
 
 A relative `snapshot.file` resolves against the pipeline project directory, not the shell's working directory. You can use an absolute path to select a fixed location.
 
-The output root is `snapshot.baseDir` when set, otherwise Nextflow's `outputDir` (set with `-output-dir`, default `results`). If the run published files outside `outputDir` and `params.outdir` contains all of them, the root is `params.outdir`.
+The output root is the first of these that is set: `snapshot.baseDir`, Nextflow's `outputDir` (in the config or with `-output-dir`), `params.outdir`, then `results`.
 
 The plugin resolves the selected root using Nextflow's canonical path handling. Every published target must be under this root. Set an explicit absolute path or storage URI when you need to avoid ambiguity.
 

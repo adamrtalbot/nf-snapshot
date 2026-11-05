@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 - Fix runs reporting success on Seqera Platform, and in `workflow.success`, when the snapshot check fails.
-- Default the output root to `params.outdir` when published files are outside `outputDir` but all under `params.outdir`. The update command also falls back to `params.outdir` from the config.
+- Resolve the output root in this order: `snapshot.baseDir`, `outputDir`, `params.outdir`, then `results`. The update command uses the same order after `--outputDir`.
 
 ## [0.2.1]
 

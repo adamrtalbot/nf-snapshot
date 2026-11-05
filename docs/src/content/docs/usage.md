@@ -83,7 +83,7 @@ A size check misses content changes that keep the same number of bytes. Changing
 
 ## Choose the output root
 
-Snapshot paths are relative to Nextflow's `outputDir`, which is where the workflow `output` block publishes. Pipelines that publish with `publishDir` under `params.outdir` work without extra configuration. If your pipeline publishes elsewhere, set `baseDir`:
+Snapshot paths are relative to the first of these that is set: `snapshot.baseDir`, Nextflow's `outputDir`, `params.outdir`, then `results`. Pipelines that publish with the workflow `output` block or with `publishDir` under `params.outdir` work without extra configuration. If your pipeline publishes elsewhere, set `baseDir`:
 
 ```groovy title="nextflow.config"
 snapshot {

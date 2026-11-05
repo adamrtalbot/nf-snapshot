@@ -40,7 +40,7 @@ If the snapshot is missing, the plugin creates it and passes the check. Commit t
 nf-snapshot: 1 published file(s) outside snapshot base dir ...
 ```
 
-Set `snapshot.baseDir` to a common parent of all published targets. Its default is Nextflow's `outputDir`, or `params.outdir` when that holds every published target. Ignore patterns do not exempt targets from this check.
+Set `snapshot.baseDir` to a common parent of all published targets. Without it, the root is `outputDir` if set, then `params.outdir`, then `results`. Ignore patterns do not exempt targets from this check.
 
 ## No published files were found
 

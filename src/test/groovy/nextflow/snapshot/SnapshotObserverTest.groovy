@@ -142,25 +142,27 @@ class SnapshotObserverTest extends Specification {
         complete(out, [file: snap.toString()]) == null
     }
 
-    def 'should default base dir to params.outdir when outputs are outside outputDir'() {
+    def 'should resolve base dir as baseDir, then outputDir, then params.outdir'() {
         given:
         def out = publish('a.txt': 'hello')
-        def snap = tmp.resolve('test.json')
+        def other = tmp.resolve('other').toString()
+        def snap = tmp.resolve('test.json').toString()
 
-        when:
-        def e = complete(out, [file: snap.toString(), baseDir: null], true, [outdir: out.toString()])
-
-        then:
-        e == null
-        new JsonSlurper().parse(snap.toFile()) == [files: ['a.txt': '5d41402abc4b2a76b9719d911017c592']]
+        expect:
+        complete(out, [file: snap, baseDir: null], true, [outdir: out.toString()]) == null
+        complete(out, [file: snap, baseDir: null], true, [outdir: other], [outputDir: out.toString()]) == null
+        complete(out, [file: snap], true, [outdir: other], [outputDir: other]) == null
     }
 
-    def 'should fail when outputs are outside outputDir and params.outdir'() {
-        when:
-        def e = complete(publish('a.txt': 'hello'), [file: tmp.resolve('test.json').toString(), baseDir: null], true, [outdir: tmp.resolve('other').toString()])
+    def 'should fail when outputs are not under the resolved base dir'() {
+        given:
+        def out = publish('a.txt': 'hello')
+        def snap = tmp.resolve('test.json').toString()
 
-        then:
-        e.message.contains('outside snapshot base dir')
+        expect:
+        complete(out, [file: snap, baseDir: null], true, [outdir: out.toString()], [outputDir: tmp.resolve('other').toString()])
+            .message.contains('outside snapshot base dir')
+        complete(out, [file: snap, baseDir: null]).message.contains('outside snapshot base dir')
     }
 
     def 'should fail when outputs differ'() {
@@ -238,12 +240,12 @@ class SnapshotObserverTest extends Specification {
     }
 
     /** Run the check and return the error passed to {@code session.abort}, or null. */
-    private Throwable complete(Path out, Map opts, boolean success = true, Map params = [:]) {
+    private Throwable complete(Path out, Map opts, boolean success = true, Map params = [:], Map config = [:]) {
         Throwable aborted = null
         def session = Mock(Session) {
             isSuccess() >> success
             getBaseDir() >> tmp.resolve('project')
-            getOutputDir() >> tmp.resolve('results')
+            getConfig() >> config
             getParams() >> params
             abort(_) >> { aborted = it[0] }
         }

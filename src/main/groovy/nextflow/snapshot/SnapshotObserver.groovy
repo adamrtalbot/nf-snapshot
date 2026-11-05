@@ -68,7 +68,8 @@ class SnapshotObserver implements TraceObserverV2 {
             return
         }
         final file = snapshotFile()
-        final base = baseDir()
+        // Same order as the update command; 'results' resolves as Session.outputDir does
+        final base = FileHelper.toCanonicalPath(config.baseDir ?: session.config.get('outputDir') ?: session.params.get('outdir') ?: 'results')
         // ponytail: hashes serially, parallelise if full-size runs are slow
         final actual = capture(published, base, config.ignore, config.nameOnly, config.sizeOnly)
 
@@ -87,18 +88,6 @@ class SnapshotObserver implements TraceObserverV2 {
         }
         log.error "nf-snapshot: outputs differ from ${file}\n${problems.join('\n')}\nRe-run with NXF_SNAPSHOT_UPDATE=true to accept the changes"
         throw new AbortRunException("nf-snapshot: ${problems.size()} difference(s) from snapshot")
-    }
-
-    /** {@code snapshot.baseDir}, else {@code outputDir}, else {@code params.outdir} when it holds every published file. */
-    private Path baseDir() {
-        if( config.baseDir )
-            return FileHelper.toCanonicalPath(config.baseDir)
-        final outputDir = FileHelper.toCanonicalPath(session.outputDir)
-        final outdir = session.params.get('outdir')
-        if( !outdir || published.every { Path it -> it.startsWith(outputDir) } )
-            return outputDir
-        final paramsDir = FileHelper.toCanonicalPath(outdir)
-        return published.every { Path it -> it.startsWith(paramsDir) } ? paramsDir : outputDir
     }
 
     private Path snapshotFile() {

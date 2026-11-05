@@ -56,15 +56,15 @@ Use a directory containing only that run's outputs: the command captures every f
 
 ## Options
 
-| Option     | Default     | Description                                                                            |
-| ---------- | ----------- | -------------------------------------------------------------------------------------- |
-| `enabled`  | `false`     | Enable the check.                                                                      |
-| `file`     |             | Snapshot JSON file. Relative paths resolve against the project directory.              |
-| `baseDir`  | `outputDir` | Directory that snapshot paths are relative to. Falls back to `params.outdir`.          |
-| `update`   | `false`     | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same.  |
-| `ignore`   | `[]`        | Glob patterns of relative paths to leave out of the snapshot.                          |
-| `nameOnly` | `[]`        | Glob patterns of relative paths to check by filename, without a content hash.          |
-| `sizeOnly` | `[]`        | Glob patterns of relative paths to check by file size, without reading their contents. |
+| Option     | Default                                           | Description                                                                            |
+| ---------- | ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `enabled`  | `false`                                           | Enable the check.                                                                      |
+| `file`     |                                                   | Snapshot JSON file. Relative paths resolve against the project directory.              |
+| `baseDir`  | `outputDir`, then `params.outdir`, then `results` | Directory that snapshot paths are relative to.                                         |
+| `update`   | `false`                                           | Write the snapshot instead of verifying it. `NXF_SNAPSHOT_UPDATE=true` does the same.  |
+| `ignore`   | `[]`                                              | Glob patterns of relative paths to leave out of the snapshot.                          |
+| `nameOnly` | `[]`                                              | Glob patterns of relative paths to check by filename, without a content hash.          |
+| `sizeOnly` | `[]`                                              | Glob patterns of relative paths to check by file size, without reading their contents. |
 
 Globs use Java `PathMatcher` syntax, so `**/*.html` does not match `report.html` at the top level. Use `{*.html,**/*.html}` to match both.
 
